@@ -1,0 +1,16 @@
+decoder_32.v
+dffe_ref.v
+eight_bit_left_shift.v
+four_bit_left_shift.v
+left_barrel_shifter.v
+mux_2.v
+mux_32.v
+mux_4.v
+mux_8.v
+one_bit_left_shift.v
+regfile.v
+regfile_tb.v
+register.v
+sixteen_bit_left_shift.v
+tri_state_buffer.v
+two_bit_left_shift.v

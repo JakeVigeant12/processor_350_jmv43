@@ -150,7 +150,7 @@ module processor(
     assign mw_is_jal_op = ~mw_opcode[4] & ~mw_opcode[3] & ~mw_opcode[2] & mw_opcode[1] & mw_opcode[0];
     assign mw_is_setx_op = mw_opcode[4] & ~mw_opcode[3] & mw_opcode[2] & ~mw_opcode[1] & mw_opcode[0];
 
-    tri_buffer_5 normalCase(mw_ir_out[26:22], 1'b1, ctrl_writeReg);
+    tri_state_buffer_5 normalCase(mw_ir_out[26:22], 1'b1, ctrl_writeReg);
 
     // Write the data to the relevant registers
     assign data_writeReg = mw_is_lw_op ? mw_d_out : mw_o_out;

@@ -179,12 +179,12 @@ module processor(
     assign mw_is_setx_op = mw_opcode[4] & ~mw_opcode[3] & mw_opcode[2] & ~mw_opcode[1] & mw_opcode[0];
 
     // Create multiple tri state buffers for ctrl_writeReg
-    tri_state_buffer_5 tri_jal_reg(ctrl_writeReg, 5'd31, !(mw_ovf_out || mw_is_setx_op) && mw_is_jal_op);
-    tri_state_buffer_5 tri_normal_reg(ctrl_writeReg, mw_ir_out[26:22], !(mw_ovf_out || mw_is_setx_op) && !mw_is_jal_op);
-    tri_state_buffer_5 tri_status_reg(ctrl_writeReg, 5'd30, (mw_ovf_out || mw_is_setx_op) && !mw_is_jal_op);
+    tri_state_buffer_5 tri_jal_reg(5'd31, !(mw_ovf_out || mw_is_setx_op) && mw_is_jal_op, ctrl_writeReg);
+    tri_state_buffer_5 tri_normal_reg(mw_ir_out[26:22], !(mw_ovf_out || mw_is_setx_op) && !mw_is_jal_op, ctrl_writeReg);
+    tri_state_buffer_5 tri_status_reg(5'd30, (mw_ovf_out || mw_is_setx_op) && !mw_is_jal_op, ctrl_writeReg);
 
     // Write the data to the relevant registers
-    assign ctrl_writeEnable = mw_is_r_type_op | mw_is_addi_op | mw_is_lw_op | mw_is_jal_op | mw_is_setx_op | (multdiv_result_ready && !multdiv_exception);
+    assign ctrl_writeEnable = mw_is_r_type_op | mw_is_addi_op | mw_is_lw_op | mw_is_jal_op | mw_is_setx_op;
 
 
 

@@ -1,4 +1,4 @@
-module left_barrel_shifter(data, amt, out);
+module left_barrel_shifter (data, amt, out);
     input [31:0] data;
     input [4:0] amt;
     output [31:0] out;

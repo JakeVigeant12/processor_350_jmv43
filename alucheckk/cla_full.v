@@ -1,14 +1,17 @@
 module cla_full_adder(a, b, c_in, s);
+    //inputs
     input [31:0] a;
     input [31:0] b;
     input c_in;
     output [31:0] s;
     
+    //wire connectors for carries
     wire c_out;
     wire [3:0] p_out, g_out;
     wire [4:0] c;
 
-\    wire [31:0] p, g;
+   // Propagate and generate
+    wire [31:0] p, g;
     // Generate comes from bitwise and, propagate comes from bitwsie or
     bitwise_and a_and_b(a, b, g);
     bitwise_or a_or_b(a, b, p);

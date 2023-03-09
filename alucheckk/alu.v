@@ -32,9 +32,9 @@ module alu(data_operandA, data_operandB, ctrl_ALUopcode, ctrl_shiftamt, data_res
     mux_8 alu_mux(addOut, addOut, andRes, orRes, llsRes, rsaRes, 32'b0, 32'b0, data_result, ctrl_ALUopcode[2:0]);
 
     wire not_msb_A, not_msb_B, not_msb_addOut;
-    not notA(not_msb_A, data_operandA[31]);
-    not notB(not_msb_B, inputB[31]);
-    not notAddOut(not_msb_addOut, addOut[31]);
+    not complement_msb_A(not_msb_A, data_operandA[31]);
+    not complement_msb_B(not_msb_B, inputB[31]);
+    not complement_msb_addOut(not_msb_addOut, addOut[31]);
 
     wire overflow_pos, overflow_neg;
     and check_overflow_neg(overflow_neg, data_operandA[31], inputB[31], not_msb_addOut);

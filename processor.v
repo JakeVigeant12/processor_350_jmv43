@@ -99,7 +99,6 @@ module processor(
     wire [1:0] mux_a_select, mux_b_select;
     wire [31:0] xm_o_out;
 
-      // ALU instantiation and configuration
     wire [31:0] alu_in_a, alu_in_b;
 
 

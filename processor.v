@@ -66,7 +66,6 @@ module processor(
     wire [31:0] pc_curr, pc_next_def, pc_next, fd_pc_out, fd_ir_out;
     pc_reg pc(clock, reset, 1'b1, pc_next, pc_curr); 
     assign address_imem = pc_curr; 
-    //module cla_full_adder(a, b, c_in, s);
     cla_full_adder pcAdder(pc_curr, 32'b1, 1'b0, pc_next_def); 
 
     //FD stage

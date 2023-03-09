@@ -64,7 +64,7 @@ module processor(
 	/* YOUR CODE STARTS HERE */
     //PC 
     wire [31:0] pc, pcAdv, pc_next, fd_out, fd_ir_out;
-    pc_reg pc(clock, reset, 1'b1, pc_next, pc); 
+    pc_reg pcC(clock, reset, 1'b1, pc_next, pc); 
     assign address_imem = pc; 
     cla_full_adder pcAdder(pc, 32'b1, 1'b0, pcAdv); 
 

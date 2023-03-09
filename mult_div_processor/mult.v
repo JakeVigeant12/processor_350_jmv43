@@ -48,11 +48,11 @@ module mult(product,overflow,multiplicand, multiplier, clk, counter);
 	adder_32 adder2(ans,num1,num2,tempHold,holdComp);
 
 
-	bitwise_or prodRes(running_prod[64:33],ans,0);
-	bitwise_or prodRuns(running_prod[32:1],running_prod_out[32:1],0);
+	bitwise_or prodRes(ans,0, running_prod[64:33]);
+	bitwise_or prodRuns(running_prod_out[32:1],0,running_prod[32:1]);
 	or prodRunt(running_prod[0],running_prod_out[0],1'b0);
 
-	bitwise_or prodMain(product,running_prod[32:1],0);
+	bitwise_or prodMain(running_prod[32:1],0, product);
 
 	wire wrong;
 	and chekcWrong(wrong,multiplicand[31],multiplier[31],product[31]);

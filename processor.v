@@ -63,128 +63,93 @@ module processor(
 
 	/* YOUR CODE STARTS HERE */
     //PC 
-    wire [31:0] pc_curr, pc_next_def, pc_next, fd_pc_out, fd_ir_out;
-    pc_reg pc(clock, reset, 1'b1, pc_next, pc_curr); 
-    assign address_imem = pc_curr; 
-    cla_full_adder pcAdder(pc_curr, 32'b1, 1'b0, pc_next_def); 
+    wire [31:0] pc, pcAdv, pc_next, fd_out, fd_ir_out;
+    pc_reg pc(clock, reset, 1'b1, pc_next, pc); 
+    assign address_imem = pc; 
+    cla_full_adder pcAdder(pc, 32'b1, 1'b0, pcAdv); 
 
     //FD stage
-    fd_latch fd(clock, 1'b1, pc_curr, branch_or_jump_taken ? 32'b0 : q_imem, fd_pc_out, fd_ir_out);
+    fd_latch fd(clock, 1'b1, pc, q_imem, fd_out, fd_ir_out);
 
-    // Configure opcodes from inputs
     wire [4:0] fd_opcode;
     assign fd_opcode = fd_ir_out[31:27];
 
-    // Determine whether type R or Bex operation
-    wire fd_of_type_r_op, fd_of_bex_op;
-    assign fd_of_type_r_op = ~fd_opcode[4] & ~fd_opcode[3] & ~fd_opcode[2] & ~fd_opcode[1] & ~fd_opcode[0];
-    assign fd_of_bex_op = fd_opcode[4] & ~fd_opcode[3] & fd_opcode[2] & fd_opcode[1] & ~fd_opcode[0];
+    wire fd_isR;
+    assign fd_isR = ~fd_opcode[4] & ~fd_opcode[3] & ~fd_opcode[2] & ~fd_opcode[1] & ~fd_opcode[0];
 
-    // Register read values
+
     assign ctrl_readRegA = fd_ir_out[21:17];
-    assign ctrl_readRegB = fd_of_type_r_op ? fd_ir_out[16:12] : (fd_of_bex_op ? 5'd30 : fd_ir_out[26:22]);
+    assign ctrl_readRegB = fd_isR ? fd_ir_out[16:12] : 5'b0;
 
-    // MODULE: DECODE 
-    // Setup DX latch
-    wire [31:0] dx_ir_in, dx_pc_out, dx_a_out, dx_b_out, dx_ir_out;
+    //DX stage
     assign dx_ir_in = fd_ir_out;
-    dx_latch dx(clock, fd_pc_out, data_readRegA, data_readRegB, branch_or_jump_taken ? 32'b0 : dx_ir_in, dx_pc_out, dx_a_out, dx_b_out, dx_ir_out);
+    wire [31:0] dx_ir_in, dx_pcOut, dx_a_curr, dx_b_curr, dx_ir_out;
+    dx_latch dx(clock, fd_out, data_readRegA, data_readRegB, dx_ir_in, dx_pcOut, dx_a_curr, dx_b_curr, dx_ir_out);
 
-    // Opcode for operation
+    // get operation
     wire [4:0] dx_opcode;
     assign dx_opcode = dx_ir_out[31:27];
 
-    // MODULE: EXECUTE
-    // For bypassing, declare select wires here
-    wire [1:0] mux_a_select, mux_b_select;
-    wire [31:0] xm_o_out;
+    // XM stage
+    wire [1:0] mux_b;
+    wire [31:0] xm_o_curr;
 
-    wire [31:0] alu_in_a, alu_in_b;
+    wire [31:0] alu_data_a, alu_data_b;
 
 
-    mux_4 alu_a_mux(xm_o_out, data_writeReg, dx_a_out, 32'b0, alu_in_a, mux_a_select);
     wire [31:0] alu_b_mux_out;
-    mux_4 alu_b_mux(xm_o_out, data_writeReg, dx_b_out, 32'b0, alu_b_mux_out, mux_b_select);
+    mux_4 alumux1(xm_o_curr, data_writeReg, dx_b_curr, 32'b0, alu_b_mux_out, mux_b);
 
-    // Configure immediate value for ALU
-    wire [31:0] sx_imm;
-    assign sx_imm[16:0] = dx_ir_out[16:0];
-    assign sx_imm[31:17] = dx_ir_out[16] ? 15'b111111111111111 : 15'b0;
+    wire [31:0] imm;
+    assign imm[16:0] = dx_ir_out[16:0];
+    //sign extend the imm
+    assign imm[31:17] = dx_ir_out[16] ? 15'b1 : 15'b0;
 
 
-    // Determine whether operation branches or is of type R and configure ALU input accordingly
-    wire dx_of_branch_op, dx_of_type_r_op;
-    assign dx_of_type_r_op = ~dx_opcode[4] & ~dx_opcode[3] & ~dx_opcode[2] & ~dx_opcode[1] & ~dx_opcode[0];
-    assign dx_of_branch_op = (~dx_opcode[4] & ~dx_opcode[3] & ~dx_opcode[2] & dx_opcode[1] & ~dx_opcode[0]) | 
-        (~dx_opcode[4] & ~dx_opcode[3] & dx_opcode[2] & dx_opcode[1] & ~dx_opcode[0]);
+    wire dx_rOp;
+    assign dx_rOp = ~dx_opcode[4] & ~dx_opcode[3] & ~dx_opcode[2] & ~dx_opcode[1] & ~dx_opcode[0];
+   
 
     // Configure ALU opcode, inputs,and shift amount
     wire [4:0] alu_opcode, shift_amount;
-    assign alu_opcode = dx_of_type_r_op ? dx_ir_out[6:2] : (dx_of_branch_op ? 5'b1 : 5'b0);
-    assign shift_amount = dx_of_type_r_op ? dx_ir_out[11:7] : 5'b0;
-    assign alu_in_b = (dx_of_type_r_op || dx_of_branch_op) ? alu_b_mux_out : sx_imm;
+    assign alu_opcode = dx_ir_out[6:2];
+    assign shift_amount = dx_ir_out[11:7];
+    assign alu_data_b = dx_rOp ? alu_b_mux_out : imm;
 
     // Outputs of ALU and ALU unit itself
     wire [31:0] alu_out, alu_out_ovf;
     wire is_not_equal, is_less_than, alu_overflow;
-    alu alu_unit(alu_in_a, alu_in_b, alu_opcode, shift_amount, alu_out, is_not_equal, is_less_than, alu_overflow);
+    alu ula(alu_data_a, alu_data_b, alu_opcode, shift_amount, alu_out, is_not_equal, is_less_than, alu_overflow);
 
-    // check for overflow, assign to rstatus
     wire overflow;
     assign overflow = alu_overflow;
 
-    wire dx_is_jal_op, dx_is_setx_op;
-    assign dx_is_jal_op = ~dx_opcode[4] & ~dx_opcode[3] & ~dx_opcode[2] & dx_opcode[1] & dx_opcode[0];
-    assign dx_is_setx_op = dx_opcode[4] & ~dx_opcode[3] & dx_opcode[2] & ~dx_opcode[1] & dx_opcode[0];
 
-	 // tri buffers for assigning o input of xm latch
     wire [31:0] xm_o_in;
-    tri_state_buffer tri_alu(xm_o_in, alu_out, !overflow && !dx_is_jal_op && !dx_is_setx_op);
-    tri_state_buffer tri_ovf(xm_o_in,rstatus, overflow && !dx_is_jal_op && !dx_is_setx_op);
-    tri_state_buffer tri_jal( xm_o_in, dx_pc_out, !overflow && dx_is_jal_op && !dx_is_setx_op);
-
-    wire [31:0] t;
-    assign t[31:27] = 5'b0;
-    assign t[26:0] = dx_ir_out[26:0];
-    tri_state_buffer tri_setx(xm_o_in, t, !overflow && !dx_is_jal_op && dx_is_setx_op);
+    assign xm_o_in = alu_out;
 
     // XM latch
-    wire [31:0] xm_b_out, xm_ir_out;
-    wire xm_ovf_out;
-    xm_latch xm(clock, xm_o_in, overflow, alu_b_mux_out, dx_ir_out, xm_o_out, xm_ovf_out, xm_b_out, xm_ir_out);
+    wire [31:0] xm_b_curr, xm_ir_curr;
+    wire xm_overfl;
+    xm_latch xm(clock, xm_o_in, overflow, alu_b_mux_out, dx_ir_out, xm_o_curr, xm_overfl, xm_b_curr, xm_ir_curr);
 	
-    // Data memory
-    wire [4:0] xm_opcode;
-    assign xm_opcode = xm_ir_out[31:27];
-    wire xm_is_sw_op, xm_is_bex_op;
-    assign xm_is_sw_op = ~xm_opcode[4] & ~xm_opcode[3] & xm_opcode[2] & xm_opcode[1] & xm_opcode[0];
-    assign wren = xm_is_sw_op;
-
-    assign address_dmem = xm_o_out;
-    assign data = xm_b_out;
+   
 
     // MW latch
     wire [31:0] mw_o_out, mw_d_out, mw_ir_out;
     wire mw_ovf_out;
-    mw_latch mw(clock, xm_o_out, xm_ovf_out, q_dmem, xm_ir_out, mw_o_out, mw_ovf_out, mw_d_out, mw_ir_out);
+    mw_latch mw(clock, xm_o_curr, xm_overfl, q_dmem, xm_ir_curr, mw_o_out, mw_ovf_out, mw_d_out, mw_ir_out);
 
     // Writing back to Regfile
     wire [4:0] mw_opcode;
     assign mw_opcode = mw_ir_out[31:27];
-    wire mw_is_r_type_op, mw_is_addi_op, mw_is_lw_op, mw_is_sw_op, mw_is_jal_op, mw_is_bex_op, mw_is_setx_op;
-    assign mw_is_r_type_op = ~mw_opcode[4] & ~mw_opcode[3] & ~mw_opcode[2] & ~mw_opcode[1] & ~mw_opcode[0];
-    assign mw_is_addi_op = ~mw_opcode[4] & ~mw_opcode[3] & mw_opcode[2] & ~mw_opcode[1] & mw_opcode[0];
-    assign mw_is_lw_op = ~mw_opcode[4] & mw_opcode[3] & ~mw_opcode[2] & ~mw_opcode[1] & ~mw_opcode[0];
-    assign mw_is_jal_op = ~mw_opcode[4] & ~mw_opcode[3] & ~mw_opcode[2] & mw_opcode[1] & mw_opcode[0];
-    assign mw_is_setx_op = mw_opcode[4] & ~mw_opcode[3] & mw_opcode[2] & ~mw_opcode[1] & mw_opcode[0];
-
-    // Create multiple tri state buffers for ctrl_writeReg
-    tri_state_buffer_5 tri_jal_reg(5'd31, !(mw_ovf_out || mw_is_setx_op) && mw_is_jal_op, ctrl_writeReg);
-    tri_state_buffer_5 tri_normal_reg(mw_ir_out[26:22], !(mw_ovf_out || mw_is_setx_op) && !mw_is_jal_op, ctrl_writeReg);
-    tri_state_buffer_5 tri_status_reg(5'd30, (mw_ovf_out || mw_is_setx_op) && !mw_is_jal_op, ctrl_writeReg);
+    wire mw_Rop, mw_addi;
+    assign mw_Rop = ~mw_opcode[4] & ~mw_opcode[3] & ~mw_opcode[2] & ~mw_opcode[1] & ~mw_opcode[0];
+    assign mw_addi = ~mw_opcode[4] & ~mw_opcode[3] & mw_opcode[2] & ~mw_opcode[1] & mw_opcode[0];
+   
 
     // Write the data to the relevant registers
-    assign ctrl_writeEnable = mw_is_r_type_op | mw_is_addi_op | mw_is_lw_op | mw_is_jal_op | mw_is_setx_op;
+    assign ctrl_writeEnable = mw_Rop | mw_addi;
 
 
 

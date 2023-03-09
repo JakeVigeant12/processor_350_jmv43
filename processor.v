@@ -140,16 +140,22 @@ module processor(
     wire mw_ovf_out;
     mw_latch mw(clock, xm_o_curr, xm_overfl, q_dmem, xm_ir_curr, mw_o_out, mw_ovf_out, mw_d_out, mw_ir_out);
 
-    // Writing back to Regfile
+    //writeback step
     wire [4:0] mw_opcode;
     assign mw_opcode = mw_ir_out[31:27];
-    wire mw_Rop, mw_addi;
-    assign mw_Rop = ~mw_opcode[4] & ~mw_opcode[3] & ~mw_opcode[2] & ~mw_opcode[1] & ~mw_opcode[0];
-    assign mw_addi = ~mw_opcode[4] & ~mw_opcode[3] & mw_opcode[2] & ~mw_opcode[1] & mw_opcode[0];
-   
+    wire mw_is_r_type_op, mw_is_addi_op, mw_is_lw_op, mw_is_sw_op, mw_is_jal_op, mw_is_bex_op, mw_is_setx_op;
+    assign mw_is_r_type_op = ~mw_opcode[4] & ~mw_opcode[3] & ~mw_opcode[2] & ~mw_opcode[1] & ~mw_opcode[0];
+    assign mw_is_addi_op = ~mw_opcode[4] & ~mw_opcode[3] & mw_opcode[2] & ~mw_opcode[1] & mw_opcode[0];
+    assign mw_is_lw_op = ~mw_opcode[4] & mw_opcode[3] & ~mw_opcode[2] & ~mw_opcode[1] & ~mw_opcode[0];
+    assign mw_is_jal_op = ~mw_opcode[4] & ~mw_opcode[3] & ~mw_opcode[2] & mw_opcode[1] & mw_opcode[0];
+    assign mw_is_setx_op = mw_opcode[4] & ~mw_opcode[3] & mw_opcode[2] & ~mw_opcode[1] & mw_opcode[0];
+
+    tri_buffer_5 normalCase(mw_ir_out[26:22], 1'b1, ctrl_writeReg);
 
     // Write the data to the relevant registers
-    assign ctrl_writeEnable = mw_Rop | mw_addi;
+    assign data_writeReg = mw_is_lw_op ? mw_d_out : mw_o_out;
+    assign ctrl_writeEnable = mw_is_r_type_op | mw_is_addi_op | mw_is_lw_op | mw_is_jal_op | mw_is_setx_op;
+
 
 
 

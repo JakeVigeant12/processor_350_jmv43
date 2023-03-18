@@ -69,13 +69,18 @@ module processor(
     cla_full_adder pcAdder(pc, 32'b1, 1'b0, pcAdv); 
 
     //FD stage
+    //Disable enable toggle if time to stall later
     fd_latch fd(clock, 1'b1, pc, q_imem, fd_out, fd_ir_out);
 
     wire [4:0] fd_opcode;
     assign fd_opcode = fd_ir_out[31:27];
 
+    //CHheck if R type instruction
     wire fd_isR;
     assign fd_isR = ~fd_opcode[4] & ~fd_opcode[3] & ~fd_opcode[2] & ~fd_opcode[1] & ~fd_opcode[0];
+    //Check if add I instruction
+    wire fd_isAddI;
+    assign fd_isAddI = ~fd_opcode[4] & ~fd_opcode[3] & fd_opcode[2] & ~fd_opcode[1] & fd_opcode[0];
 
 
     assign ctrl_readRegA = fd_ir_out[21:17];
@@ -86,7 +91,7 @@ module processor(
     wire [31:0] dx_ir_in, dx_pcOut, dx_a_curr, dx_b_curr, dx_ir_out;
     dx_latch dx(clock, fd_out, data_readRegA, data_readRegB, dx_ir_in, dx_pcOut, dx_a_curr, dx_b_curr, dx_ir_out);
 
-    // get operation
+    // get operation for execute stage
     wire [4:0] dx_opcode;
     assign dx_opcode = dx_ir_out[31:27];
 
@@ -98,6 +103,7 @@ module processor(
 
 
     wire [31:0] alu_b_mux_out;
+    //module mux_4(in0, in1, in2, in3, out, sel);
     mux_4 alumux1(xm_o_curr, data_writeReg, dx_b_curr, 32'b0, alu_b_mux_out, mux_b);
 
     wire [31:0] imm;
@@ -109,28 +115,31 @@ module processor(
     wire dx_rOp;
     assign dx_rOp = ~dx_opcode[4] & ~dx_opcode[3] & ~dx_opcode[2] & ~dx_opcode[1] & ~dx_opcode[0];
    
-
-    // Configure ALU opcode, inputs,and shift amount
-    wire [4:0] alu_opcode, shift_amount;
+    //Wire through ALU inputs, shamt, op
+    wire [4:0] alu_opcode, shamt;
     assign alu_opcode = dx_ir_out[6:2];
-    assign shift_amount = dx_ir_out[11:7];
+    assign shamt = dx_ir_out[11:7];
     assign alu_data_b = dx_rOp ? alu_b_mux_out : imm;
 
-    // Outputs of ALU and ALU unit itself
+    //ALU unit and output
     wire [31:0] alu_out, alu_out_ovf;
     wire is_not_equal, is_less_than, alu_overflow;
-    alu ula(alu_data_a, alu_data_b, alu_opcode, shift_amount, alu_out, is_not_equal, is_less_than, alu_overflow);
+    alu ula(alu_data_a, alu_data_b, alu_opcode, shamt, alu_out, is_not_equal, is_less_than, alu_overflow);
 
+    //MULTDIV
+
+    //Overflow from all arithematic units
     wire overflow;
     assign overflow = alu_overflow;
 
-
+    //Output from alu into xm latch
     wire [31:0] xm_o_in;
     assign xm_o_in = alu_out;
 
     // XM latch
     wire [31:0] xm_b_curr, xm_ir_curr;
     wire xm_overfl;
+    //module xm_latch(clk, o_in, ovfIn, b_in, inIns,  o_out, outOvf, bOut, insOut);
     xm_latch xm(clock, xm_o_in, overflow, alu_b_mux_out, dx_ir_out, xm_o_curr, xm_overfl, xm_b_curr, xm_ir_curr);
 	
    
@@ -138,6 +147,7 @@ module processor(
     // MW latch
     wire [31:0] mw_o_out, mw_d_out, mw_ir_out;
     wire mw_ovf_out;
+    //module mw_latch(clk, o_in, ovfIn, d_in, inIns,  o_out, outOvf, dOut, insOut);
     mw_latch mw(clock, xm_o_curr, xm_overfl, q_dmem, xm_ir_curr, mw_o_out, mw_ovf_out, mw_d_out, mw_ir_out);
 
     //writeback step
@@ -146,15 +156,14 @@ module processor(
     wire mw_is_r_type_op, mw_is_addi_op, mw_is_lw_op, mw_is_sw_op, mw_is_jal_op, mw_is_bex_op, mw_is_setx_op;
     assign mw_is_r_type_op = ~mw_opcode[4] & ~mw_opcode[3] & ~mw_opcode[2] & ~mw_opcode[1] & ~mw_opcode[0];
     assign mw_is_addi_op = ~mw_opcode[4] & ~mw_opcode[3] & mw_opcode[2] & ~mw_opcode[1] & mw_opcode[0];
-    assign mw_is_lw_op = ~mw_opcode[4] & mw_opcode[3] & ~mw_opcode[2] & ~mw_opcode[1] & ~mw_opcode[0];
-    assign mw_is_jal_op = ~mw_opcode[4] & ~mw_opcode[3] & ~mw_opcode[2] & mw_opcode[1] & mw_opcode[0];
-    assign mw_is_setx_op = mw_opcode[4] & ~mw_opcode[3] & mw_opcode[2] & ~mw_opcode[1] & mw_opcode[0];
+    //module tri_state_buffer(out, inp, enable);
+    tri_state_buffer_5 normalCase(ctrl_writeReg, mw_ir_out[26:22], 1'b1);
 
-    tri_state_buffer_5 normalCase(mw_ir_out[26:22], 1'b1, ctrl_writeReg);
 
-    // Write the data to the relevant registers
     assign data_writeReg = mw_is_lw_op ? mw_d_out : mw_o_out;
-    assign ctrl_writeEnable = mw_is_r_type_op | mw_is_addi_op | mw_is_lw_op | mw_is_jal_op | mw_is_setx_op;
+    assign ctrl_writeEnable = mw_is_r_type_op | mw_is_addi_op;
+
+
 
 
 

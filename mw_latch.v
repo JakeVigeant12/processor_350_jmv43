@@ -13,4 +13,6 @@ module mw_latch(clk, o_in, ovfIn, d_in, inIns,  o_out, outOvf, dOut, insOut);
         end
     endgenerate
     
+    dffe_ref dffe_ovf(outOvf, ovfIn, clock, 1'b1, 1'b0);
+
 endmodule

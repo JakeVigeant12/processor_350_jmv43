@@ -12,5 +12,7 @@ module xm_latch(clk, o_in, ovfIn, b_in, inIns,  o_out, outOvf, bOut, insOut);
             dffe_ref ins(insOut[i], inIns[i], clk, 1'b1, 1'b0);
         end
     endgenerate
+    dffe_ref dffe_ovf(outOvf, ovfIn, clock, 1'b1, 1'b0);
+
     
 endmodule

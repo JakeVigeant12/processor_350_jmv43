@@ -156,8 +156,8 @@ module processor(
     wire mw_is_r_type_op, mw_is_addi_op, mw_is_lw_op, mw_is_sw_op, mw_is_jal_op, mw_is_bex_op, mw_is_setx_op;
     assign mw_is_r_type_op = ~mw_opcode[4] & ~mw_opcode[3] & ~mw_opcode[2] & ~mw_opcode[1] & ~mw_opcode[0];
     assign mw_is_addi_op = ~mw_opcode[4] & ~mw_opcode[3] & mw_opcode[2] & ~mw_opcode[1] & mw_opcode[0];
-    //module tri_state_buffer(out, inp, enable);
-    tri_state_buffer_5 normalCase(ctrl_writeReg, mw_ir_out[26:22], 1'b1);
+
+    assign ctrl_writeReg = mw_ir_out[26:22];
 
 
     assign data_writeReg = mw_is_lw_op ? mw_d_out : mw_o_out;

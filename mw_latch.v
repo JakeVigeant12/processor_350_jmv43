@@ -1,8 +1,9 @@
 module mw_latch(clk, o_in, ovfIn, d_in, inIns,  o_out, outOvf, dOut, insOut);
 
-    input clk;
-    input [31:0] cPc, inIns, o_in, d_in, ovfIn;
-    output [31:0] pcOut, insOut, o_out, dOut, outOvf;
+    input clk, ovfIn;
+    input [31:0] cPc, inIns, o_in, d_in;
+    output [31:0] pcOut, insOut, o_out, dOut;
+    output outOvf;
 
     genvar i;
     generate

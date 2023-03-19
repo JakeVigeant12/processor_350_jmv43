@@ -1,8 +1,9 @@
 module xm_latch(clk, o_in, ovfIn, b_in, inIns,  o_out, outOvf, bOut, insOut);
 
-    input clk;
-    input [31:0] cPc, inIns, o_in, b_in, ovfIn;
-    output [31:0] pcOut, insOut, o_out, bOut, outOvf;
+    input clk, ovfIn;
+    input [31:0] cPc, inIns, o_in, b_in;
+    output [31:0] pcOut, insOut, o_out, bOut;
+    output outOvf;
 
     genvar i;
     generate
@@ -12,6 +13,7 @@ module xm_latch(clk, o_in, ovfIn, b_in, inIns,  o_out, outOvf, bOut, insOut);
             dffe_ref ins(insOut[i], inIns[i], clk, 1'b1, 1'b0);
         end
     endgenerate
+    //module dffe_ref (q, d, clk, en, clr);
     dffe_ref dffe_ovf(outOvf, ovfIn, clock, 1'b1, 1'b0);
 
     

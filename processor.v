@@ -153,14 +153,14 @@ module processor(
     //writeback step
     wire [4:0] mw_opcode;
     assign mw_opcode = mw_ir_out[31:27];
-    wire mw_is_r_type_op, mw_is_addi_op, mw_is_lw_op, mw_is_sw_op, mw_is_jal_op, mw_is_bex_op, mw_is_setx_op;
+    wire mw_is_r_type_op, mw_is_addi_op;
     assign mw_is_r_type_op = ~mw_opcode[4] & ~mw_opcode[3] & ~mw_opcode[2] & ~mw_opcode[1] & ~mw_opcode[0];
     assign mw_is_addi_op = ~mw_opcode[4] & ~mw_opcode[3] & mw_opcode[2] & ~mw_opcode[1] & mw_opcode[0];
 
     assign ctrl_writeReg = mw_ir_out[26:22];
 
 
-    assign data_writeReg = mw_is_lw_op ? mw_d_out : mw_o_out;
+    assign data_writeReg =  mw_o_out;
     assign ctrl_writeEnable = mw_is_r_type_op | mw_is_addi_op;
 
 

@@ -130,13 +130,13 @@ module processor(
 
     //Wire through ALU inputs, shamt, op
     wire [4:0] alu_opcode, shamt;
-    assign alu_opcode = dx_ir_out[6:2];
+    assign alu_opcode = 5'b0;
     assign shamt = dx_ir_out[11:7];
 
     //ALU unit and output
     wire [31:0] alu_out, alu_out_ovf;
     wire is_not_equal, is_less_than, alu_overflow;
-    sampAlu ula(inp_a, inp_b, alu_opcode, shamt, alu_out, is_not_equal, is_less_than, alu_overflow);
+    alu ula(inp_a, inp_b, alu_opcode, shamt, alu_out, is_not_equal, is_less_than, alu_overflow);
 
     // //MULTDIV
 

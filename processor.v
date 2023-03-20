@@ -174,9 +174,9 @@ module processor(
 
     //For now just writeback arithematic output, O
     //With lw instruction, dmem output will be stored (use mux) 
-    wire mw_opcode[4:0];
+    wire [4:0] mw_opcode;
     assign mw_opcode = mw_ir_out[31:27];
-    assign is_mw_lw = ~dx_opcode[4] & dx_opcode[3] & ~dx_opcode[2] & ~dx_opcode[1] & ~dx_opcode[0];
+    assign is_mw_lw = ~mw_opcode[4] & mw_opcode[3] & ~mw_opcode[2] & ~mw_opcode[1] & ~mw_opcode[0];
 
     //module mux_2(out, select, in0, in1);
     mux_2 writebackmux(data_writeReg, is_mw_lw, mw_o_out, mw_d_out);

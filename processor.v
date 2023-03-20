@@ -153,10 +153,17 @@ module processor(
     xm_latch xm(clock, alu_out, overflow, data_readRegB, dx_ir_out, xm_o_out, xm_overflow_out, xm_b_out, xm_ir_curr);
 
     //HANDLE data memory reads and writes here
+    //Wire data and memory adress in case of sw
+    assign xm_o_out = address_dmem;
+    assign data = xm_b_out;
+    wire is_sw;
+    //Allow writes to dmem only if instruction is store word
+    assign is_sw = ~dx_opcode[4] & ~dx_opcode[3] & dx_opcode[2] & dx_opcode[1] & dx_opcode[0];
+    assign wren = is_sw;
 
     wire[31:0] dataMemOut;
-    //0's until lw instruction is implemented
-    assign dataMemOut = 32'b0;
+    //lw data from dmem
+    assign dataMemOut = q_dmem;
     
 
 //MW Stage

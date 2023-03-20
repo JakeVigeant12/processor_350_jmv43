@@ -118,7 +118,7 @@ module processor(
     wire [31:0] imm;
     assign imm[16:0] = dx_ir_out[16:0];
     //sign extend the imm
-    assign imm[31:17] = dx_ir_out[16] ? 15'b1 : 15'b0;
+    assign imm[31:17] = dx_ir_out[16] ? 15'b111111111111111 : 15'b0;
 
     //Choose between the immediate and the value from regB
     //module mux_2(out, select, in0, in1);

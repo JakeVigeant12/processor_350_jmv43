@@ -184,7 +184,7 @@ module processor(
     mux_2 writebackmux(data_writeReg, is_mw_lw, mw_o_out, mw_d_out);
     assign ctrl_writeReg = mw_ir_out[26:22];
     //Disable write enable with other instruction types as added
-    assign ctrl_writeEnable = is_mw_addi | is_mw_rOp;
+    assign ctrl_writeEnable = is_mw_lw | is_mw_addi | is_mw_rOp;
 
 
 // 	/* END CODE */

@@ -174,8 +174,13 @@ module processor(
 
     //For now just writeback arithematic output, O
     //With lw instruction, dmem output will be stored (use mux) 
+    wire mw_opcode[4:0];
+    assign mw_opcode = mw_ir_out[31:27];
+    assign is_mw_lw = ~dx_opcode[4] & dx_opcode[3] & ~dx_opcode[2] & ~dx_opcode[1] & ~dx_opcode[0];
+
+    //module mux_2(out, select, in0, in1);
+    mux2 writebackmux(data_writeReg, is_mw_lw, mw_o_out, mw_d_out);
     assign ctrl_writeReg = mw_ir_out[26:22];
-    assign data_writeReg =  mw_o_out;
     //Disable write enable with other instruction types as added
     assign ctrl_writeEnable = 1'b1;
 

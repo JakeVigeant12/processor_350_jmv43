@@ -154,11 +154,13 @@ module processor(
 
     //HANDLE data memory reads and writes here
     //Wire data and memory adress in case of sw
+    wire [4:0] xm_opcode;
+    assign xm_opcode = xm_ir_curr[31:27];
     assign address_dmem = xm_o_out;
     assign data = xm_b_out;
     wire is_sw;
     //Allow writes to dmem only if instruction is store word
-    assign is_sw = ~dx_opcode[4] & ~dx_opcode[3] & dx_opcode[2] & dx_opcode[1] & dx_opcode[0];
+    assign is_sw = ~xm_opcode[4] & ~xm_opcode[3] & xm_opcode[2] & xm_opcode[1] & xm_opcode[0];
     assign wren = is_sw;
 
     wire[31:0] dataMemOut;

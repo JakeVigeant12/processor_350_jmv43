@@ -162,17 +162,13 @@ module processor(
     //Allow writes to dmem only if instruction is store word
     assign is_sw = ~xm_opcode[4] & ~xm_opcode[3] & xm_opcode[2] & xm_opcode[1] & xm_opcode[0];
     assign wren = is_sw;
-
-    wire[31:0] dataMemOut;
-    //lw data from dmem
-    assign dataMemOut = q_dmem;
     
 
 //MW Stage
     wire [31:0] mw_o_out, mw_d_out, mw_ir_out;
     wire mw_ovf_out;
     //module mw_latch(clk, o_in, ovfIn, d_in, inIns,  o_out, outOvf, dOut, insOut);
-    mw_latch mw(clock, xm_o_out, xm_overflow_out, dataMemOut, xm_ir_curr, mw_o_out, mw_ovf_out, mw_d_out, mw_ir_out);
+    mw_latch mw(clock, xm_o_out, xm_overflow_out, q_dmem, xm_ir_curr, mw_o_out, mw_ovf_out, mw_d_out, mw_ir_out);
 
     //For now just writeback arithematic output, O
     //With lw instruction, dmem output will be stored (use mux) 
@@ -184,10 +180,12 @@ module processor(
     assign is_mw_addi = ~mw_opcode[4] & ~mw_opcode[3] & mw_opcode[2] & ~mw_opcode[1] & mw_opcode[0];
 
     //module mux_2(out, select, in0, in1);
-    mux_2 writebackmux(data_writeReg, is_mw_lw, mw_o_out, mw_d_out);
+    mux_2 writebackmux(data_writeReg, is_mw_lw, mw_d_out, mw_o_out);
     assign ctrl_writeReg = mw_ir_out[26:22];
     //Disable write enable with other instruction types as added
     assign ctrl_writeEnable = is_mw_lw | is_mw_addi | is_mw_rOp;
+
+    //LW into registers is not working
 
 
 // 	/* END CODE */

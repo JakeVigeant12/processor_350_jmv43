@@ -40,7 +40,6 @@
 ./Wrapper.v
 ./RAM.v
 ./dffe_neg.v
-./sampAlu.v
 ./processor.v
 ./mult_div_processor/mult.v
 ./mult_div_processor/aq_reg.v

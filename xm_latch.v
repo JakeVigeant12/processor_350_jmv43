@@ -14,7 +14,7 @@ module xm_latch(clk, o_in, ovfIn, b_in, inIns,  o_out, outOvf, bOut, insOut);
         end
     endgenerate
     //module dffe_ref (q, d, clk, en, clr);
-    dffe_ref dffe_ovf(outOvf, ovfIn, clock, 1'b1, 1'b0);
+    dffe_ref dffe_ovf(outOvf, ovfIn, clk, 1'b1, 1'b0);
 
     
 endmodule

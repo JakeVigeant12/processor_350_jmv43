@@ -2,7 +2,7 @@ module dffe_neg (q, d, clk, en, clr);
    input d, clk, en, clr;
    wire clr;
    output q;
-    reg q;
+   reg q;
 
    initial
    begin

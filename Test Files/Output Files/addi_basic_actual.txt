@@ -1,28 +1,59 @@
+Cycle  11: Wrote x into register 1
+Cycle  12: Wrote x into register 2
+Cycle  13: Wrote x into register 3
+Cycle  14: Wrote x into register 4
+Cycle  15: Wrote x into register 5
+Cycle  16: Wrote x into register 6
+Cycle  17: Wrote x into register 7
+Cycle  18: Wrote X into register 8
+Cycle  19: Wrote X into register 9
+Cycle  20: Wrote X into register 10
+Cycle  21: Wrote X into register 11
+Cycle  22: Wrote X into register 12
+Cycle  23: Wrote X into register 13
+Cycle  24: Wrote X into register 14
+Cycle  25: Wrote X into register 15
+Cycle  26: Wrote z into register 16
+Cycle  27: Wrote z into register 17
+Cycle  28: Wrote z into register 18
+Cycle  29: Wrote z into register 19
+Cycle  30: Wrote z into register 20
+Cycle  31: Wrote z into register 21
+Cycle  32: Wrote z into register 22
+Cycle  33: Wrote z into register 23
+Cycle  34: Wrote 0 into register 24
+Cycle  35: Wrote 0 into register 25
+Cycle  36: Wrote 0 into register 26
+Cycle  37: Wrote 0 into register 27
+Cycle  38: Wrote 0 into register 28
+Cycle  39: Wrote 0 into register 29
+Cycle  40: Wrote 0 into register 30
+Cycle  41: Wrote 0 into register 31
 ============== Testing Mode ==============
 Reg  0:           0
-Reg  1:           0
-Reg  2:           0
-Reg  3:           0
-Reg  4:           0
-Reg  5:           0
-Reg  6:           0
-Reg  7:           0
-Reg  8:           0
-Reg  9:           0
-Reg 10:           0
-Reg 11:           0
-Reg 12:           0
-Reg 13:           0
-Reg 14:           0
-Reg 15:           0
-Reg 16:           0
-Reg 17:           0
-Reg 18:           0
-Reg 19:           0
-Reg 20:           0
-Reg 21:           0
-Reg 22:           0
-Reg 23:           0
+Reg  1:           x
+Reg  2:           x
+Reg  3:           x
+Reg  4:           x
+Reg  5:           x
+Reg  6:           x
+Reg  7:           x
+Reg  8:           X
+Reg  9:           X
+Reg 10:           X
+Reg 11:           X
+Reg 12:           X
+Reg 13:           X
+Reg 14:           X
+Reg 15:           X
+Reg 16:           z
+Reg 17:           z
+Reg 18:           z
+Reg 19:           z
+Reg 20:           z
+Reg 21:           z
+Reg 22:           z
+Reg 23:           z
 Reg 24:           0
 Reg 25:           0
 Reg 26:           0

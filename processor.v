@@ -154,7 +154,7 @@ module processor(
 
     //HANDLE data memory reads and writes here
     //Wire data and memory adress in case of sw
-    assign xm_o_out = address_dmem;
+    assign address_dmem = xm_o_out;
     assign data = xm_b_out;
     wire is_sw;
     //Allow writes to dmem only if instruction is store word

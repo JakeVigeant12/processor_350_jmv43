@@ -14,11 +14,3 @@ Reg: 20 Expected:          20 Actual:           0
 Reg: 21 Expected:          21 Actual:           0
 Reg: 22 Expected:          22 Actual:           0
 Reg: 23 Expected:          23 Actual:           0
-Reg: 24 Expected:          24 Actual:           0
-Reg: 25 Expected:          25 Actual:           0
-Reg: 26 Expected:          26 Actual:           0
-Reg: 27 Expected:          27 Actual:           0
-Reg: 28 Expected:          28 Actual:           0
-Reg: 29 Expected:          29 Actual:           0
-Reg: 30 Expected:          30 Actual:           0
-Reg: 31 Expected:          31 Actual:           0

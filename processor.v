@@ -136,7 +136,7 @@ module processor(
     //ALU unit and output
     wire [31:0] alu_out, alu_out_ovf;
     wire is_not_equal, is_less_than, alu_overflow;
-    alu ula(inp_a, inp_b, alu_opcode, shamt, alu_out, is_not_equal, is_less_than, alu_overflow);
+    sampAlu ula(inp_a, inp_b, alu_opcode, shamt, alu_out, is_not_equal, is_less_than, alu_overflow);
 
     // //MULTDIV
 

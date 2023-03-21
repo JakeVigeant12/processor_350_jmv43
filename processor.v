@@ -91,7 +91,7 @@ module processor(
 
     assign ctrl_readRegA = fd_ir_out[21:17];
     //If not r type, just read reg0
-    assign ctrl_readRegB = fd_isR ? fd_ir_out[16:12] : 5'b0;
+    assign ctrl_readRegB = fd_isR ? fd_ir_out[16:12] : fd_ir_out[26:22];
 
 
 
@@ -131,6 +131,7 @@ module processor(
     assign dx_is_I = dx_is_addi | dx_is_sw_I | dx_is_lw_I;
     mux_2 operandBMux(inp_b,dx_is_I,dx_b_curr,imm);
 
+
     //Wire through ALU inputs, shamt, op
     wire [4:0] alu_opcode, shamt;
     
@@ -161,10 +162,10 @@ module processor(
     assign xm_opcode = xm_ir_curr[31:27];
     assign address_dmem = xm_o_out;
     assign data = xm_b_out;
-    wire is_sw;
+    wire is_sw_xm;
     //Allow writes to dmem only if instruction is store word
-    assign is_sw = ~xm_opcode[4] & ~xm_opcode[3] & xm_opcode[2] & xm_opcode[1] & xm_opcode[0];
-    assign wren = is_sw;
+    assign is_sw_xm = ~xm_opcode[4] & ~xm_opcode[3] & xm_opcode[2] & xm_opcode[1] & xm_opcode[0];
+    assign wren = is_sw_xm;
     
 
 //MW Stage

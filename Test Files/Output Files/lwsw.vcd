@@ -1,5 +1,5 @@
 $date
-	Tue Mar 21 09:40:40 2023
+	Tue Mar 21 10:08:51 2023
 $end
 $version
 	Icarus Verilog
@@ -57,7 +57,7 @@ $var wire 32 K inp_a [31:0] $end
 $var wire 1 L is_mw_addi $end
 $var wire 1 M is_mw_lw $end
 $var wire 1 N is_mw_rOp $end
-$var wire 1 O is_sw $end
+$var wire 1 O is_sw_xm $end
 $var wire 1 P overflow $end
 $var wire 1 5 reset $end
 $var wire 1 * wren $end

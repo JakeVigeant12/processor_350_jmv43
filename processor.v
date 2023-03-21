@@ -90,7 +90,7 @@ module processor(
 
 
     assign ctrl_readRegA = fd_ir_out[21:17];
-    //If not r type, just read reg0
+    //If not r type, read I type result FIX WHEN J
     assign ctrl_readRegB = fd_isR ? fd_ir_out[16:12] : fd_ir_out[26:22];
 
 

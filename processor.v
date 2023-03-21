@@ -150,7 +150,7 @@ module processor(
     //module xm_latch(clk, o_in, ovfIn, b_in, inIns,  o_out, outOvf, bOut, insOut);
     wire [31:0] xm_o_out, xm_b_out, xm_ir_curr;
     wire xm_overflow_out;
-    xm_latch xm(clock, alu_out, overflow, data_readRegB, dx_ir_out, xm_o_out, xm_overflow_out, xm_b_out, xm_ir_curr);
+    xm_latch xm(clock, alu_out, overflow, dx_b_curr, dx_ir_out, xm_o_out, xm_overflow_out, xm_b_out, xm_ir_curr);
 
     //HANDLE data memory reads and writes here
     //Wire data and memory adress in case of sw

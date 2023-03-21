@@ -136,7 +136,7 @@ module processor(
     
     //If I type, add, otherwise find
     assign alu_opcode = dx_is_I ? 5'b0 : dx_ir_out[6:2];
-    assign shamt = dx_ir_out[11:7];
+    assign shamt = dx_is_R ? dx_ir_out[11:7] : 5'b0;
 
     //ALU unit and output
     wire [31:0] alu_out, alu_out_ovf;

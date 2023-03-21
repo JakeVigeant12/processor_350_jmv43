@@ -180,7 +180,7 @@ module processor(
     assign is_mw_addi = ~mw_opcode[4] & ~mw_opcode[3] & mw_opcode[2] & ~mw_opcode[1] & mw_opcode[0];
 
     //module mux_2(out, select, in0, in1);
-    mux_2 writebackmux(data_writeReg, is_mw_lw, mw_d_out, mw_o_out);
+    mux_2 writebackmux(data_writeReg, is_mw_lw, mw_o_out, mw_d_out);
     assign ctrl_writeReg = mw_ir_out[26:22];
     //Disable write enable with other instruction types as added
     assign ctrl_writeEnable = is_mw_lw | is_mw_addi | is_mw_rOp;

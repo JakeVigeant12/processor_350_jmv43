@@ -1,18 +1,18 @@
-Cycle  10: Wrote 1 into register 3
-Cycle  11: Wrote 35 into register 4
-Cycle  12: Wrote 3 into register 1
-Cycle  13: Wrote 21 into register 2
-Cycle  14: Wrote 4294967295 into register 3
-Cycle  15: Wrote 4294967261 into register 4
+Cycle  10: Wrote 0 into register 3
+Cycle  11: Wrote 0 into register 4
+Cycle  12: Wrote 0 into register 1
+Cycle  13: Wrote 0 into register 2
+Cycle  14: Wrote 0 into register 3
+Cycle  15: Wrote 0 into register 4
 Cycle  21: Wrote 0 into register 16
 Cycle  22: Wrote 0 into register 17
 Cycle  23: Wrote 0 into register 18
 ============== Testing Mode ==============
 Reg  0:           0
-Reg  1:           3
-Reg  2:          21
-Reg  3:  4294967295
-Reg  4:  4294967261
+Reg  1:           0
+Reg  2:           0
+Reg  3:           0
+Reg  4:           0
 Reg  5:           0
 Reg  6:           0
 Reg  7:           0

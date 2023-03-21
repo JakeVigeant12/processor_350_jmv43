@@ -123,9 +123,12 @@ module processor(
     //Choose between the immediate and the value from regB
     //module mux_2(out, select, in0, in1);
     wire dx_is_I,dx_is_R;
-    assign dx_is_I = ~dx_opcode[4] & ~dx_opcode[3] & dx_opcode[2] & ~dx_opcode[1] & dx_opcode[0];
+    assign dx_is_addi = ~dx_opcode[4] & ~dx_opcode[3] & dx_opcode[2] & ~dx_opcode[1] & dx_opcode[0];
+    assign dx_is_sw_I = ~dx_opcode[4] & ~dx_opcode[3] & dx_opcode[2] & dx_opcode[1] & dx_opcode[0];
+    assign dx_is_lw_I = ~dx_opcode[4] & dx_opcode[3] & ~dx_opcode[2] & ~dx_opcode[1] & ~dx_opcode[0];
     assign dx_is_R = ~dx_opcode[4] & ~dx_opcode[3] & ~dx_opcode[2] & ~dx_opcode[1] & ~dx_opcode[0];
 
+    assign dx_is_I = dx_is_addi | dx_is_sw_I | dx_is_lw_I;
     mux_2 operandBMux(inp_b,dx_is_I,dx_b_curr,imm);
 
     //Wire through ALU inputs, shamt, op

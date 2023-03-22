@@ -76,7 +76,7 @@ module processor(
 //FD stage
     //Disable enable toggle if time to stall later
     //module fd_latch(clk, enable, cPc, inIns, pcOut, insOut);
-    fd_latch fd(clock, 1'b1, pcActive, q_imem, fd_pc_out, fd_ir_out);
+    fd_latch fd(!clock, 1'b1, pcActive, q_imem, fd_pc_out, fd_ir_out);
 
     wire [4:0] fd_opcode;
     assign fd_opcode = fd_ir_out[31:27];
@@ -98,7 +98,7 @@ module processor(
 //DX stage
     wire [31:0] dx_ir_in, dx_pcOut, dx_a_curr, dx_b_curr, dx_ir_out;
     //module dx_latch(clk, cPc, a_in, b_in, inIns, pcOut, aOut, bOut, insOut);
-    dx_latch dx(clock, fd_pc_out, data_readRegA, data_readRegB, fd_ir_out, dx_pcOut, dx_a_curr, dx_b_curr, dx_ir_out);
+    dx_latch dx(!clock, fd_pc_out, data_readRegA, data_readRegB, fd_ir_out, dx_pcOut, dx_a_curr, dx_b_curr, dx_ir_out);
 
     // get operation for execute stage
     wire [4:0] dx_opcode;
@@ -122,7 +122,7 @@ module processor(
 
     //Choose between the immediate and the value from regB
     //module mux_2(out, select, in0, in1);
-    wire dx_is_I,dx_is_R;
+    wire dx_is_I,dx_is_R, dx_is_addi,dx_is_sw_I,dx_is_lw_I;
     assign dx_is_addi = ~dx_opcode[4] & ~dx_opcode[3] & dx_opcode[2] & ~dx_opcode[1] & dx_opcode[0];
     assign dx_is_sw_I = ~dx_opcode[4] & ~dx_opcode[3] & dx_opcode[2] & dx_opcode[1] & dx_opcode[0];
     assign dx_is_lw_I = ~dx_opcode[4] & dx_opcode[3] & ~dx_opcode[2] & ~dx_opcode[1] & ~dx_opcode[0];
@@ -144,7 +144,18 @@ module processor(
     wire is_not_equal, is_less_than, alu_overflow;
     alu ula(inp_a, inp_b, alu_opcode, shamt, alu_out, is_not_equal, is_less_than, alu_overflow);
 
-    // //MULTDIV
+    // //module multdiv(
+	// // data_operandA, data_operandB,
+	// // ctrl_MULT, ctrl_DIV,
+	// // clock,
+	// // data_result, data_exception, data_resultRDY);
+    // // //MULTDIV, 
+    // wire [32:0] multdiv_in_a, multdiv_in_b, mdiv_result;
+    // wire isMult, isDiv, is_result_ready, mdivClk, is_mdiv_exception;
+    // assign multdiv_in_a = dx_ir_out[21:17];
+    // assign multdiv_in_b = dx_ir_out[16:12];
+
+    // multdiv muldivunit(multdiv_in_a, multdiv_in_b, isMult, isDiv, mdivClk, mdiv_result, is_mdiv_exception, is_result_ready);
 
     //Overflow from all arithematic units
     wire overflow;
@@ -154,7 +165,7 @@ module processor(
     //module xm_latch(clk, o_in, ovfIn, b_in, inIns,  o_out, outOvf, bOut, insOut);
     wire [31:0] xm_o_out, xm_b_out, xm_ir_curr;
     wire xm_overflow_out;
-    xm_latch xm(clock, alu_out, overflow, dx_b_curr, dx_ir_out, xm_o_out, xm_overflow_out, xm_b_out, xm_ir_curr);
+    xm_latch xm(!clock, alu_out, overflow, dx_b_curr, dx_ir_out, xm_o_out, xm_overflow_out, xm_b_out, xm_ir_curr);
 
     //HANDLE data memory reads and writes here
     //Wire data and memory adress in case of sw
@@ -172,9 +183,8 @@ module processor(
     wire [31:0] mw_o_out, mw_d_out, mw_ir_out;
     wire mw_ovf_out;
     //module mw_latch(clk, o_in, ovfIn, d_in, inIns,  o_out, outOvf, dOut, insOut);
-    mw_latch mw(clock, xm_o_out, xm_overflow_out, q_dmem, xm_ir_curr, mw_o_out, mw_ovf_out, mw_d_out, mw_ir_out);
+    mw_latch mw(!clock, xm_o_out, xm_overflow_out, q_dmem, xm_ir_curr, mw_o_out, mw_ovf_out, mw_d_out, mw_ir_out);
 
-    //For now just writeback arithematic output, O
     //With lw instruction, dmem output will be stored (use mux) 
     wire [4:0] mw_opcode;
     wire is_mw_rOp, is_mw_lw, is_mw_addi;

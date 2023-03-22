@@ -144,18 +144,19 @@ module processor(
     wire is_not_equal, is_less_than, alu_overflow;
     alu ula(inp_a, inp_b, alu_opcode, shamt, alu_out, is_not_equal, is_less_than, alu_overflow);
 
-    // //module multdiv(
-	// // data_operandA, data_operandB,
-	// // ctrl_MULT, ctrl_DIV,
-	// // clock,
-	// // data_result, data_exception, data_resultRDY);
-    // // //MULTDIV, 
-    // wire [32:0] multdiv_in_a, multdiv_in_b, mdiv_result;
-    // wire isMult, isDiv, is_result_ready, mdivClk, is_mdiv_exception;
-    // assign multdiv_in_a = dx_ir_out[21:17];
-    // assign multdiv_in_b = dx_ir_out[16:12];
+    //module multdiv(
+	// data_operandA, data_operandB,
+	// ctrl_MULT, ctrl_DIV,
+	// clock,
+	// data_result, data_exception, data_resultRDY);
+    // //MULTDIV, 
+    wire [32:0] multdiv_inpa, multdiv_inpb, mdiv_result;
+    wire isMult, isDiv, is_result_ready, mdivClk, is_mdiv_exception;
+    assign multdiv_in_a = dx_ir_out[21:17];
+    assign multdiv_in_b = dx_ir_out[16:12];
 
-    // multdiv muldivunit(multdiv_in_a, multdiv_in_b, isMult, isDiv, mdivClk, mdiv_result, is_mdiv_exception, is_result_ready);
+    
+    multdiv muldivunit(multdiv_inpa, multdiv_inpb, isMult, isDiv, mdivClk, mdiv_result, is_mdiv_exception, is_result_ready);
 
     //Overflow from all arithematic units
     wire overflow;

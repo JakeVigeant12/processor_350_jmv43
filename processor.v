@@ -72,14 +72,14 @@ module processor(
     assign address_imem = pcActive; 
     //module cla_full_adder(a, b, c_in, s);\
     cla_full_adder inc_pc(pcActive, 1, 1'b0, pcAdv); 
-    //Jump instruction mux
-    assign pcNext = dx_is_jump | dx_is_jal ? dx_ir_out[26:0]  : pcAdv;
+    //Jump pc, otherwise, just advance it by one
+    assign pcNext = fd_is_jump | fd_is_jal ? fd_ir_out[26:0]  : pcAdv;
 
 //FD stage
     //flush what was just fetched if jump
-    fd_latch fd(!clock, 1'b1, pcActive, dx_is_jump | dx_is_jal ? 32'b0 : q_imem, fd_pc_out, fd_ir_out);
+    fd_latch fd(!clock, 1'b1, pcActive, fd_is_jump | fd_is_jal ? 32'b0 : q_imem, fd_pc_out, fd_ir_out);
 
-    assign fd_current_ir = dx_is_jump | dx_is_jal? 32'b0 : fd_ir_out;
+    assign fd_current_ir =  fd_ir_out;
 
     wire [4:0] fd_opcode;
     assign fd_opcode = fd_current_ir[31:27];
@@ -92,7 +92,10 @@ module processor(
     wire fd_isAddI;
     assign fd_isAddI = ~fd_opcode[4] & ~fd_opcode[3] & fd_opcode[2] & ~fd_opcode[1] & fd_opcode[0];
 
-    assign fd_isJump = (fd_opcode==5'b00001);
+    wire fd_is_jump, fd_is_jal;
+    assign fd_is_jump = ~fd_opcode[4] & ~fd_opcode[3] & ~fd_opcode[2] & ~fd_opcode[1] & fd_opcode[0] === 1'b1;
+    assign fd_is_jal = ~fd_opcode[4] & ~fd_opcode[3] & ~fd_opcode[2] & fd_opcode[1] & fd_opcode[0] === 1'b1;
+
     //Assign the PC
     //Flush what was just fetched
 
@@ -106,7 +109,7 @@ module processor(
 //DX stage
     wire [31:0] dx_ir_in, dx_pcOut, dx_a_curr, dx_b_curr, dx_ir_out;
     //module dx_latch(clk, cPc, a_in, b_in, inIns, pcOut, aOut, bOut, insOut);
-    dx_latch dx(!clock, fd_pc_out, data_readRegA, data_readRegB, fd_current_ir, dx_pcOut, dx_a_curr, dx_b_curr, dx_ir_out);
+    dx_latch dx(!clock, fd_pc_out, data_readRegA, data_readRegB, dx_is_jump | dx_is_jal ? 32'b0 : fd_current_ir, dx_pcOut, dx_a_curr, dx_b_curr, dx_ir_out);
 
     // get operation for execute stage
     wire [4:0] dx_opcode;
@@ -135,8 +138,6 @@ module processor(
     assign dx_is_sw_I = ~dx_opcode[4] & ~dx_opcode[3] & dx_opcode[2] & dx_opcode[1] & dx_opcode[0];
     assign dx_is_lw_I = ~dx_opcode[4] & dx_opcode[3] & ~dx_opcode[2] & ~dx_opcode[1] & ~dx_opcode[0];
     assign dx_is_R = ~dx_opcode[4] & ~dx_opcode[3] & ~dx_opcode[2] & ~dx_opcode[1] & ~dx_opcode[0];
-    assign dx_is_jump = ~dx_opcode[4] & ~dx_opcode[3] & ~dx_opcode[2] & ~dx_opcode[1] & dx_opcode[0] === 1'b1;
-    assign dx_is_jal = ~dx_opcode[4] & ~dx_opcode[3] & ~dx_opcode[2] & dx_opcode[1] & dx_opcode[0] === 1'b1;
 
 
     assign dx_is_I = dx_is_addi | dx_is_sw_I | dx_is_lw_I;
@@ -169,9 +170,9 @@ module processor(
     assign multdiv_in_b = dx_ir_out[16:12];
 
 
-    wire [31:0] jal_pc;
-    cla_full_adder jalAdder(dx_pcOut, 1, 1'b0, jal_pc);
-    assign xm_o_in = dx_is_jal ? jal_pc : alu_out;
+    // wire [31:0] jal_pc;
+    // cla_full_adder jalAdder(dx_pcOut, 1, 1'b0, jal_pc);
+    // assign xm_o_in = dx_is_jal ? jal_pc : alu_out;
 
 
 
@@ -218,6 +219,7 @@ module processor(
     
     //If jal, write the program counter + 1 that was before the jump, set write register to 31
     //module mux_2(out, select, in0, in1);
+    
     mux_2 writebackmux(data_writeReg, is_mw_lw, mw_o_out, mw_d_out);
     assign ctrl_writeReg = is_mw_jal ? 31 : mw_ir_out[26:22];
     //Disable write enable with other instruction types as added

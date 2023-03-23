@@ -65,51 +65,40 @@ module processor(
 	/* YOUR CODE STARTS HERE */
 
 //PC 
-    wire [31:0] pcActive, pcAdv, pcNext, fd_pc_out, fd_ir_out, fd_current_ir;
+    wire [31:0] pcActive, pcAdv, fd_pc_out, fd_ir_out;
     //module pc_reg(clock, reset, in_enable, in, out);
     //load next pc into 
-    pc_reg pc(clock, reset, 1'b1, pcNext, pcActive); 
+    pc_reg pc(clock, reset, 1'b1, pcAdv, pcActive); 
     assign address_imem = pcActive; 
     //module cla_full_adder(a, b, c_in, s);\
     cla_full_adder inc_pc(pcActive, 1, 1'b0, pcAdv); 
-    //Jump pc, otherwise, just advance it by one
-    assign pcNext = fd_is_jump | fd_is_jal ? fd_ir_out[26:0]  : pcAdv;
 
 //FD stage
-    //flush what was just fetched if jump
-    fd_latch fd(!clock, 1'b1, pcActive, fd_is_jump | fd_is_jal ? 32'b0 : q_imem, fd_pc_out, fd_ir_out);
-
-    assign fd_current_ir =  fd_ir_out;
+    //Disable enable toggle if time to stall later
+    //module fd_latch(clk, enable, cPc, inIns, pcOut, insOut);
+    fd_latch fd(!clock, 1'b1, pcActive, q_imem, fd_pc_out, fd_ir_out);
 
     wire [4:0] fd_opcode;
-    assign fd_opcode = fd_current_ir[31:27];
+    assign fd_opcode = fd_ir_out[31:27];
 
     //CHheck if R type instruction
-    wire fd_isJump;
     wire fd_isR;
     assign fd_isR = ~fd_opcode[4] & ~fd_opcode[3] & ~fd_opcode[2] & ~fd_opcode[1] & ~fd_opcode[0];
     //Check if add I instruction
     wire fd_isAddI;
     assign fd_isAddI = ~fd_opcode[4] & ~fd_opcode[3] & fd_opcode[2] & ~fd_opcode[1] & fd_opcode[0];
 
-    wire fd_is_jump, fd_is_jal;
-    assign fd_is_jump = ~fd_opcode[4] & ~fd_opcode[3] & ~fd_opcode[2] & ~fd_opcode[1] & fd_opcode[0] === 1'b1;
-    assign fd_is_jal = ~fd_opcode[4] & ~fd_opcode[3] & ~fd_opcode[2] & fd_opcode[1] & fd_opcode[0] === 1'b1;
 
-    //Assign the PC
-    //Flush what was just fetched
-
-
-    assign ctrl_readRegA = fd_current_ir[21:17];
+    assign ctrl_readRegA = fd_ir_out[21:17];
     //If not r type, read I type result FIX WHEN J
-    assign ctrl_readRegB = fd_isR ? fd_current_ir[16:12] : fd_current_ir[26:22];
+    assign ctrl_readRegB = fd_isR ? fd_ir_out[16:12] : fd_ir_out[26:22];
 
 
 
 //DX stage
     wire [31:0] dx_ir_in, dx_pcOut, dx_a_curr, dx_b_curr, dx_ir_out;
     //module dx_latch(clk, cPc, a_in, b_in, inIns, pcOut, aOut, bOut, insOut);
-    dx_latch dx(!clock, fd_pc_out, data_readRegA, data_readRegB, dx_is_jump | dx_is_jal ? 32'b0 : fd_current_ir, dx_pcOut, dx_a_curr, dx_b_curr, dx_ir_out);
+    dx_latch dx(!clock, fd_pc_out, data_readRegA, data_readRegB, fd_ir_out, dx_pcOut, dx_a_curr, dx_b_curr, dx_ir_out);
 
     // get operation for execute stage
     wire [4:0] dx_opcode;
@@ -133,16 +122,13 @@ module processor(
 
     //Choose between the immediate and the value from regB
     //module mux_2(out, select, in0, in1);
-    wire dx_is_I,dx_is_R, dx_is_addi,dx_is_sw_I,dx_is_lw_I, dx_is_jump;
+    wire dx_is_I,dx_is_R, dx_is_addi,dx_is_sw_I,dx_is_lw_I;
     assign dx_is_addi = ~dx_opcode[4] & ~dx_opcode[3] & dx_opcode[2] & ~dx_opcode[1] & dx_opcode[0];
     assign dx_is_sw_I = ~dx_opcode[4] & ~dx_opcode[3] & dx_opcode[2] & dx_opcode[1] & dx_opcode[0];
     assign dx_is_lw_I = ~dx_opcode[4] & dx_opcode[3] & ~dx_opcode[2] & ~dx_opcode[1] & ~dx_opcode[0];
     assign dx_is_R = ~dx_opcode[4] & ~dx_opcode[3] & ~dx_opcode[2] & ~dx_opcode[1] & ~dx_opcode[0];
 
-
     assign dx_is_I = dx_is_addi | dx_is_sw_I | dx_is_lw_I;
-
-
     mux_2 operandBMux(inp_b,dx_is_I,dx_b_curr,imm);
 
 
@@ -164,17 +150,10 @@ module processor(
 	// clock,
 	// data_result, data_exception, data_resultRDY);
     // //MULTDIV, 
-    wire [31:0] multdiv_inpa, multdiv_inpb, mdiv_result;
+    wire [32:0] multdiv_inpa, multdiv_inpb, mdiv_result;
     wire isMult, isDiv, is_result_ready, mdivClk, is_mdiv_exception;
     assign multdiv_in_a = dx_ir_out[21:17];
     assign multdiv_in_b = dx_ir_out[16:12];
-
-
-    // wire [31:0] jal_pc;
-    // cla_full_adder jalAdder(dx_pcOut, 1, 1'b0, jal_pc);
-    // assign xm_o_in = dx_is_jal ? jal_pc : alu_out;
-
-
 
     
     // multdiv muldivunit(multdiv_inpa, multdiv_inpb, isMult, isDiv, mdivClk, mdiv_result, is_mdiv_exception, is_result_ready);
@@ -185,9 +164,9 @@ module processor(
 
 //XM stage
     //module xm_latch(clk, o_in, ovfIn, b_in, inIns,  o_out, outOvf, bOut, insOut);
-    wire [31:0] xm_o_out, xm_b_out, xm_ir_curr, xm_o_in;
+    wire [31:0] xm_o_out, xm_b_out, xm_ir_curr;
     wire xm_overflow_out;
-    xm_latch xm(!clock, xm_o_in, overflow, dx_b_curr, dx_ir_out, xm_o_out, xm_overflow_out, xm_b_out, xm_ir_curr);
+    xm_latch xm(!clock, alu_out, overflow, dx_b_curr, dx_ir_out, xm_o_out, xm_overflow_out, xm_b_out, xm_ir_curr);
 
     //HANDLE data memory reads and writes here
     //Wire data and memory adress in case of sw
@@ -202,7 +181,6 @@ module processor(
     
 
 //MW Stage
-    //JAL writeback
     wire [31:0] mw_o_out, mw_d_out, mw_ir_out;
     wire mw_ovf_out;
     //module mw_latch(clk, o_in, ovfIn, d_in, inIns,  o_out, outOvf, dOut, insOut);
@@ -210,20 +188,17 @@ module processor(
 
     //With lw instruction, dmem output will be stored (use mux) 
     wire [4:0] mw_opcode;
-    wire is_mw_rOp, is_mw_lw, is_mw_addi, is_mw_jal;
+    wire is_mw_rOp, is_mw_lw, is_mw_addi;
     assign mw_opcode = mw_ir_out[31:27];
     assign is_mw_rOp = ~mw_opcode[4] & ~mw_opcode[3] & ~mw_opcode[2] & ~mw_opcode[1] & ~mw_opcode[0];
     assign is_mw_lw = ~mw_opcode[4] & mw_opcode[3] & ~mw_opcode[2] & ~mw_opcode[1] & ~mw_opcode[0];
     assign is_mw_addi = ~mw_opcode[4] & ~mw_opcode[3] & mw_opcode[2] & ~mw_opcode[1] & mw_opcode[0];
-    assign is_mw_jal = ~mw_opcode[4] & ~mw_opcode[3] & ~mw_opcode[2] & mw_opcode[1] & mw_opcode[0];
-    
-    //If jal, write the program counter + 1 that was before the jump, set write register to 31
+
     //module mux_2(out, select, in0, in1);
-    
     mux_2 writebackmux(data_writeReg, is_mw_lw, mw_o_out, mw_d_out);
-    assign ctrl_writeReg = is_mw_jal ? 31 : mw_ir_out[26:22];
+    assign ctrl_writeReg = mw_ir_out[26:22];
     //Disable write enable with other instruction types as added
-    assign ctrl_writeEnable = is_mw_lw | is_mw_addi | is_mw_rOp | is_mw_jal;
+    assign ctrl_writeEnable = is_mw_lw | is_mw_addi | is_mw_rOp;
 
     //LW into registers is not working
 

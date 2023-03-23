@@ -73,13 +73,13 @@ module processor(
     //module cla_full_adder(a, b, c_in, s);\
     cla_full_adder inc_pc(pcActive, 1, 1'b0, pcAdv); 
     //Jump instruction mux
-    assign pcNext = dx_is_jump ? dx_ir_out[26:0] : pcAdv;
+    assign pcNext = dx_is_jump | dx_is_jal ? dx_ir_out[26:0]  : pcAdv;
 
 //FD stage
     //flush what was just fetched if jump
-    fd_latch fd(!clock, 1'b1, pcActive, dx_is_jump ? 32'b0 : q_imem, fd_pc_out, fd_ir_out);
+    fd_latch fd(!clock, 1'b1, pcActive, dx_is_jump | dx_is_jal ? 32'b0 : q_imem, fd_pc_out, fd_ir_out);
 
-    assign fd_current_ir = dx_is_jump ? 32'b0 : fd_ir_out;
+    assign fd_current_ir = dx_is_jump | dx_is_jal? 32'b0 : fd_ir_out;
 
     wire [4:0] fd_opcode;
     assign fd_opcode = fd_current_ir[31:27];
@@ -169,7 +169,9 @@ module processor(
     assign multdiv_in_b = dx_ir_out[16:12];
 
 
-    assign xm_o_in = dx_is_jal ? dx_pcOut : alu_out;
+    wire [31:0] jal_pc;
+    cla_full_adder jalAdder(dx_pcOut, 1, 1'b0, jal_pc);
+    assign xm_o_in = dx_is_jal ? jal_pc : alu_out;
 
 
 

@@ -77,9 +77,12 @@ module processor(
     wire isImemJump;
     wire [4:0] imemOpcode;
     assign imemOpcode = q_imem[31:27];
-    assign isImemJump = (imemOpcode == 5'b00001);
+    assign isImemJump = (imemOpcode == 5'b00001) | (imemOpcode == 5'b00011) === 1'b1;
+    
     assign pcNextActual = isImemJump ? q_imem[26:0] : pcAdv;
 
+
+    //for JAL, we can already jump to the new pc, but need to store the pc to reg 31
 
 //FD stage
 
@@ -107,9 +110,13 @@ module processor(
 
 
 //DX stage
+    //Transform JAL instruction to an addition
+    wire is_fd_jal;
+    assign is_fd_jal = ~fd_opcode[4] & ~fd_opcode[3] & ~fd_opcode[2] & fd_opcode[1] & fd_opcode[0];
     wire [31:0] dx_ir_in, dx_pcOut, dx_a_curr, dx_b_curr, dx_ir_out;
+    assign dx_ir_in = is_fd_jal ? 32'b00000111110000000000000000000000 : fd_ir_out;
     //module dx_latch(clk, cPc, a_in, b_in, inIns, pcOut, aOut, bOut, insOut);
-    dx_latch dx(!clock, fd_pc_out, data_readRegA, data_readRegB, fd_ir_out, dx_pcOut, dx_a_curr, dx_b_curr, dx_ir_out);
+    dx_latch dx(!clock, fd_pc_out, data_readRegA, data_readRegB, dx_ir_in, dx_pcOut, dx_a_curr, dx_b_curr, dx_ir_out);
 
     // get operation for execute stage
     wire [4:0] dx_opcode;
@@ -134,11 +141,12 @@ module processor(
 
     //Choose between the immediate and the value from regB
     //module mux_2(out, select, in0, in1);
-    wire dx_is_I,dx_is_R, dx_is_addi,dx_is_sw_I,dx_is_lw_I;
+    wire dx_is_I,dx_is_R, dx_is_addi,dx_is_sw_I,dx_is_lw_I, dx_is_jal;
     assign dx_is_addi = ~dx_opcode[4] & ~dx_opcode[3] & dx_opcode[2] & ~dx_opcode[1] & dx_opcode[0];
     assign dx_is_sw_I = ~dx_opcode[4] & ~dx_opcode[3] & dx_opcode[2] & dx_opcode[1] & dx_opcode[0];
     assign dx_is_lw_I = ~dx_opcode[4] & dx_opcode[3] & ~dx_opcode[2] & ~dx_opcode[1] & ~dx_opcode[0];
     assign dx_is_R = ~dx_opcode[4] & ~dx_opcode[3] & ~dx_opcode[2] & ~dx_opcode[1] & ~dx_opcode[0];
+    assign dx_is_jal = (dx_ir_out == 32'b00000111110000000000000000000000);
 
     assign dx_is_I = dx_is_addi | dx_is_sw_I | dx_is_lw_I;
     mux_2 operandBMux(inp_b,dx_is_I,dx_b_curr,imm);
@@ -156,6 +164,7 @@ module processor(
     wire is_not_equal, is_less_than, alu_overflow;
     alu ula(inp_a, inp_b, alu_opcode, shamt, alu_out, is_not_equal, is_less_than, alu_overflow);
 
+
     //module multdiv(
 	// data_operandA, data_operandB,
 	// ctrl_MULT, ctrl_DIV,
@@ -171,14 +180,19 @@ module processor(
     // multdiv muldivunit(multdiv_inpa, multdiv_inpb, isMult, isDiv, mdivClk, mdiv_result, is_mdiv_exception, is_result_ready);
 
     //Overflow from all arithematic units
+
+    wire [31:0] jal_pc;
+    //(a, b, c_in, s);
+    cla_full_adder jalPC(dx_pcOut,32'b1,1'b0,jal_pc);
     wire overflow;
     assign overflow = alu_overflow;
-
+    wire [31:0] xm_o_in;
+    assign xm_o_in = dx_is_jal ? jal_pc : alu_out;
 //XM stage
     //module xm_latch(clk, o_in, ovfIn, b_in, inIns,  o_out, outOvf, bOut, insOut);
     wire [31:0] xm_o_out, xm_b_out, xm_ir_curr;
     wire xm_overflow_out;
-    xm_latch xm(!clock, alu_out, overflow, dx_b_curr, dx_ir_out, xm_o_out, xm_overflow_out, xm_b_out, xm_ir_curr);
+    xm_latch xm(!clock, xm_o_in, overflow, dx_b_curr, dx_ir_out, xm_o_out, xm_overflow_out, xm_b_out, xm_ir_curr);
 
     //HANDLE data memory reads and writes here
     //Wire data and memory adress in case of sw
@@ -193,12 +207,15 @@ module processor(
     
 
 //MW Stage
+    wire is_mw_jal;
     wire [31:0] mw_o_out, mw_d_out, mw_ir_out;
     wire mw_ovf_out;
     //module mw_latch(clk, o_in, ovfIn, d_in, inIns,  o_out, outOvf, dOut, insOut);
     mw_latch mw(!clock, xm_o_out, xm_overflow_out, q_dmem, xm_ir_curr, mw_o_out, mw_ovf_out, mw_d_out, mw_ir_out);
 
-    //With lw instruction, dmem output will be stored (use mux) 
+    //If jal, change data to dlatch pc
+    assign is_mw_jal = (mw_ir_out == 32'b00000111110000000000000000000000) === 1'b1;
+
     wire [4:0] mw_opcode;
     wire is_mw_rOp, is_mw_lw, is_mw_addi;
     assign mw_opcode = mw_ir_out[31:27];
@@ -207,10 +224,16 @@ module processor(
     assign is_mw_addi = ~mw_opcode[4] & ~mw_opcode[3] & mw_opcode[2] & ~mw_opcode[1] & mw_opcode[0];
 
     //module mux_2(out, select, in0, in1);
+    //out, inp, enab
+    tri_state_buffer aluData(data_writeReg, mw_o_out, (is_mw_rOp));
+    tri_state_buffer lw(data_writeReg, mw_d_out, (is_mw_lw));
+
+
+
     mux_2 writebackmux(data_writeReg, is_mw_lw, mw_o_out, mw_d_out);
     assign ctrl_writeReg = mw_ir_out[26:22];
     //Disable write enable with other instruction types as added
-    assign ctrl_writeEnable = is_mw_lw | is_mw_addi | is_mw_rOp;
+    assign ctrl_writeEnable = is_mw_lw | is_mw_addi | is_mw_rOp | is_mw_jal;
 
     //LW into registers is not working
 

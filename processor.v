@@ -65,15 +65,26 @@ module processor(
 	/* YOUR CODE STARTS HERE */
 
 //PC 
-    wire [31:0] pcActive, pcAdv, fd_pc_out, fd_ir_out;
+    wire [31:0] pcActive, pcAdv, fd_pc_out, fd_ir_out, pcNextActual;
     //module pc_reg(clock, reset, in_enable, in, out);
     //load next pc into 
-    pc_reg pc(clock, reset, 1'b1, pcAdv, pcActive); 
+    pc_reg pc(clock, reset, 1'b1, pcNextActual, pcActive); 
     assign address_imem = pcActive; 
     //module cla_full_adder(a, b, c_in, s);\
     cla_full_adder inc_pc(pcActive, 1, 1'b0, pcAdv); 
 
+    //CHECK IMEM JUMP BEFORE ITS SENT INTO LATCH
+    wire isImemJump;
+    wire [4:0] imemOpcode;
+    assign imemOpcode = q_imem[31:27];
+    assign isImemJump = (imemOpcode == 5'b00001);
+    assign pcNextActual = isImemJump ? q_imem[26:0] : pcAdv;
+
+
 //FD stage
+
+
+
     //Disable enable toggle if time to stall later
     //module fd_latch(clk, enable, cPc, inIns, pcOut, insOut);
     fd_latch fd(!clock, 1'b1, pcActive, q_imem, fd_pc_out, fd_ir_out);
@@ -110,10 +121,11 @@ module processor(
 
     wire [31:0] inp_a, inp_b;
     wire [31:0] alu_b_mux_out;
-    //ALU input A is always just A in basic case
+
+    //module mux_4(in0, in1, in2, in3, out, sel);
+    //ADD BYPASS UNIT ALU_A SELECT
     assign inp_a = dx_a_curr;
-
-
+    // mux_4 aluAmux(xm_o_out,data_writeReg,dx_a_curr,32'b0,inp_a,bypass_alu_a_select)
     //Get immediate value
     wire [31:0] imm;
     assign imm[16:0] = dx_ir_out[16:0];

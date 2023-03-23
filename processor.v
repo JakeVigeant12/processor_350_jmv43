@@ -65,40 +65,48 @@ module processor(
 	/* YOUR CODE STARTS HERE */
 
 //PC 
-    wire [31:0] pcActive, pcAdv, fd_pc_out, fd_ir_out;
+    wire [31:0] pcActive, pcAdv, pcNext, fd_pc_out, fd_ir_out, fd_current_ir;
     //module pc_reg(clock, reset, in_enable, in, out);
     //load next pc into 
-    pc_reg pc(clock, reset, 1'b1, pcAdv, pcActive); 
+    pc_reg pc(clock, reset, 1'b1, pcNext, pcActive); 
     assign address_imem = pcActive; 
     //module cla_full_adder(a, b, c_in, s);\
     cla_full_adder inc_pc(pcActive, 1, 1'b0, pcAdv); 
+    //Jump instruction mux
+    assign pcNext = dx_is_jump ? dx_ir_out[26:0] : pcAdv;
 
 //FD stage
-    //Disable enable toggle if time to stall later
-    //module fd_latch(clk, enable, cPc, inIns, pcOut, insOut);
+    //flush what was just fetched if jump
     fd_latch fd(!clock, 1'b1, pcActive, q_imem, fd_pc_out, fd_ir_out);
 
+    assign fd_current_ir = dx_is_jump ? 32'b0 : fd_ir_out;
+
     wire [4:0] fd_opcode;
-    assign fd_opcode = fd_ir_out[31:27];
+    assign fd_opcode = fd_current_ir[31:27];
 
     //CHheck if R type instruction
+    wire fd_isJump;
     wire fd_isR;
     assign fd_isR = ~fd_opcode[4] & ~fd_opcode[3] & ~fd_opcode[2] & ~fd_opcode[1] & ~fd_opcode[0];
     //Check if add I instruction
     wire fd_isAddI;
     assign fd_isAddI = ~fd_opcode[4] & ~fd_opcode[3] & fd_opcode[2] & ~fd_opcode[1] & fd_opcode[0];
 
+    assign fd_isJump = (fd_opcode==5'b00001);
+    //Assign the PC
+    //Flush what was just fetched
 
-    assign ctrl_readRegA = fd_ir_out[21:17];
+
+    assign ctrl_readRegA = fd_current_ir[21:17];
     //If not r type, read I type result FIX WHEN J
-    assign ctrl_readRegB = fd_isR ? fd_ir_out[16:12] : fd_ir_out[26:22];
+    assign ctrl_readRegB = fd_isR ? fd_current_ir[16:12] : fd_current_ir[26:22];
 
 
 
 //DX stage
     wire [31:0] dx_ir_in, dx_pcOut, dx_a_curr, dx_b_curr, dx_ir_out;
     //module dx_latch(clk, cPc, a_in, b_in, inIns, pcOut, aOut, bOut, insOut);
-    dx_latch dx(!clock, fd_pc_out, data_readRegA, data_readRegB, fd_ir_out, dx_pcOut, dx_a_curr, dx_b_curr, dx_ir_out);
+    dx_latch dx(!clock, fd_pc_out, data_readRegA, data_readRegB, fd_current_ir, dx_pcOut, dx_a_curr, dx_b_curr, dx_ir_out);
 
     // get operation for execute stage
     wire [4:0] dx_opcode;
@@ -122,13 +130,16 @@ module processor(
 
     //Choose between the immediate and the value from regB
     //module mux_2(out, select, in0, in1);
-    wire dx_is_I,dx_is_R, dx_is_addi,dx_is_sw_I,dx_is_lw_I;
+    wire dx_is_I,dx_is_R, dx_is_addi,dx_is_sw_I,dx_is_lw_I, dx_is_jump;
     assign dx_is_addi = ~dx_opcode[4] & ~dx_opcode[3] & dx_opcode[2] & ~dx_opcode[1] & dx_opcode[0];
     assign dx_is_sw_I = ~dx_opcode[4] & ~dx_opcode[3] & dx_opcode[2] & dx_opcode[1] & dx_opcode[0];
     assign dx_is_lw_I = ~dx_opcode[4] & dx_opcode[3] & ~dx_opcode[2] & ~dx_opcode[1] & ~dx_opcode[0];
     assign dx_is_R = ~dx_opcode[4] & ~dx_opcode[3] & ~dx_opcode[2] & ~dx_opcode[1] & ~dx_opcode[0];
+    assign dx_is_jump = ~dx_opcode[4] & ~dx_opcode[3] & ~dx_opcode[2] & ~dx_opcode[1] & dx_opcode[0] === 1'b1;
 
     assign dx_is_I = dx_is_addi | dx_is_sw_I | dx_is_lw_I;
+
+
     mux_2 operandBMux(inp_b,dx_is_I,dx_b_curr,imm);
 
 
@@ -150,13 +161,13 @@ module processor(
 	// clock,
 	// data_result, data_exception, data_resultRDY);
     // //MULTDIV, 
-    wire [32:0] multdiv_inpa, multdiv_inpb, mdiv_result;
+    wire [31:0] multdiv_inpa, multdiv_inpb, mdiv_result;
     wire isMult, isDiv, is_result_ready, mdivClk, is_mdiv_exception;
     assign multdiv_in_a = dx_ir_out[21:17];
     assign multdiv_in_b = dx_ir_out[16:12];
 
     
-    multdiv muldivunit(multdiv_inpa, multdiv_inpb, isMult, isDiv, mdivClk, mdiv_result, is_mdiv_exception, is_result_ready);
+    // multdiv muldivunit(multdiv_inpa, multdiv_inpb, isMult, isDiv, mdivClk, mdiv_result, is_mdiv_exception, is_result_ready);
 
     //Overflow from all arithematic units
     wire overflow;

@@ -77,7 +77,7 @@ module processor(
 
 //FD stage
     //flush what was just fetched if jump
-    fd_latch fd(!clock, 1'b1, pcActive, q_imem, fd_pc_out, fd_ir_out);
+    fd_latch fd(!clock, 1'b1, pcActive, dx_is_jump ? 32'b0 : q_imem, fd_pc_out, fd_ir_out);
 
     assign fd_current_ir = dx_is_jump ? 32'b0 : fd_ir_out;
 
@@ -136,6 +136,8 @@ module processor(
     assign dx_is_lw_I = ~dx_opcode[4] & dx_opcode[3] & ~dx_opcode[2] & ~dx_opcode[1] & ~dx_opcode[0];
     assign dx_is_R = ~dx_opcode[4] & ~dx_opcode[3] & ~dx_opcode[2] & ~dx_opcode[1] & ~dx_opcode[0];
     assign dx_is_jump = ~dx_opcode[4] & ~dx_opcode[3] & ~dx_opcode[2] & ~dx_opcode[1] & dx_opcode[0] === 1'b1;
+    assign dx_is_jal = ~dx_opcode[4] & ~dx_opcode[3] & ~dx_opcode[2] & dx_opcode[1] & dx_opcode[0] === 1'b1;
+
 
     assign dx_is_I = dx_is_addi | dx_is_sw_I | dx_is_lw_I;
 
@@ -166,6 +168,11 @@ module processor(
     assign multdiv_in_a = dx_ir_out[21:17];
     assign multdiv_in_b = dx_ir_out[16:12];
 
+
+    assign xm_o_in = dx_is_jal ? dx_pcOut : alu_out;
+
+
+
     
     // multdiv muldivunit(multdiv_inpa, multdiv_inpb, isMult, isDiv, mdivClk, mdiv_result, is_mdiv_exception, is_result_ready);
 
@@ -175,9 +182,9 @@ module processor(
 
 //XM stage
     //module xm_latch(clk, o_in, ovfIn, b_in, inIns,  o_out, outOvf, bOut, insOut);
-    wire [31:0] xm_o_out, xm_b_out, xm_ir_curr;
+    wire [31:0] xm_o_out, xm_b_out, xm_ir_curr, xm_o_in;
     wire xm_overflow_out;
-    xm_latch xm(!clock, alu_out, overflow, dx_b_curr, dx_ir_out, xm_o_out, xm_overflow_out, xm_b_out, xm_ir_curr);
+    xm_latch xm(!clock, xm_o_in, overflow, dx_b_curr, dx_ir_out, xm_o_out, xm_overflow_out, xm_b_out, xm_ir_curr);
 
     //HANDLE data memory reads and writes here
     //Wire data and memory adress in case of sw
@@ -192,6 +199,7 @@ module processor(
     
 
 //MW Stage
+    //JAL writeback
     wire [31:0] mw_o_out, mw_d_out, mw_ir_out;
     wire mw_ovf_out;
     //module mw_latch(clk, o_in, ovfIn, d_in, inIns,  o_out, outOvf, dOut, insOut);
@@ -199,17 +207,19 @@ module processor(
 
     //With lw instruction, dmem output will be stored (use mux) 
     wire [4:0] mw_opcode;
-    wire is_mw_rOp, is_mw_lw, is_mw_addi;
+    wire is_mw_rOp, is_mw_lw, is_mw_addi, is_mw_jal;
     assign mw_opcode = mw_ir_out[31:27];
     assign is_mw_rOp = ~mw_opcode[4] & ~mw_opcode[3] & ~mw_opcode[2] & ~mw_opcode[1] & ~mw_opcode[0];
     assign is_mw_lw = ~mw_opcode[4] & mw_opcode[3] & ~mw_opcode[2] & ~mw_opcode[1] & ~mw_opcode[0];
     assign is_mw_addi = ~mw_opcode[4] & ~mw_opcode[3] & mw_opcode[2] & ~mw_opcode[1] & mw_opcode[0];
-
+    assign is_mw_jal = ~mw_opcode[4] & ~mw_opcode[3] & ~mw_opcode[2] & mw_opcode[1] & mw_opcode[0];
+    
+    //If jal, write the program counter + 1 that was before the jump, set write register to 31
     //module mux_2(out, select, in0, in1);
     mux_2 writebackmux(data_writeReg, is_mw_lw, mw_o_out, mw_d_out);
-    assign ctrl_writeReg = mw_ir_out[26:22];
+    assign ctrl_writeReg = is_mw_jal ? 31 : mw_ir_out[26:22];
     //Disable write enable with other instruction types as added
-    assign ctrl_writeEnable = is_mw_lw | is_mw_addi | is_mw_rOp;
+    assign ctrl_writeEnable = is_mw_lw | is_mw_addi | is_mw_rOp | is_mw_jal;
 
     //LW into registers is not working
 

@@ -69,7 +69,7 @@ module processor(
     //module pc_reg(clock, reset, in_enable, in, out);
     //load next pc into 
     pc_reg pc(!clock, reset, 1'b1, pcNextActual, pcActive); 
-    assign address_imem = pcActive; 
+    assign address_imem = isImemJump ? q_imem[26:0] : pcActive; 
     //module cla_full_adder(a, b, c_in, s);\
     cla_full_adder inc_pc(pcActive, 1, 1'b0, pcAdv); 
 
@@ -78,7 +78,7 @@ module processor(
     wire [4:0] imemOpcode;
     assign imemOpcode = q_imem[31:27];
     assign isImemJump = (imemOpcode == 5'b00001) | (imemOpcode == 5'b00011) === 1'b1;
-    assign pcNextActual = isImemJump ? q_imem[26:0] : (is_dx_jr ? data_readRegB : pcAdv);
+    assign pcNextActual = (is_dx_jr ? data_readRegB : pcAdv);
 
      
 

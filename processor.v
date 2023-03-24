@@ -103,7 +103,7 @@ module processor(
     assign fd_isAddI = ~fd_opcode[4] & ~fd_opcode[3] & fd_opcode[2] & ~fd_opcode[1] & fd_opcode[0];
 
     wire fd_isJr;
-    assign fd_isJr = (fd_opcode==00100);
+    assign fd_isJr = (fd_opcode=== 5'b00100);
 
     
 
@@ -130,7 +130,7 @@ module processor(
     assign dx_opcode = dx_ir_out[31:27];
 
     wire is_dx_jr;
-    assign is_dx_jr = (dx_opcode == 00100);
+    assign is_dx_jr = (dx_opcode === 5'b00100);
 
     // // Feed into XM stage
     // wire [1:0] mux_b;

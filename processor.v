@@ -255,7 +255,8 @@ module processor(
     //Disable write enable with other instruction types as added
     assign ctrl_writeEnable = is_mw_lw | is_mw_addi | is_mw_rOp | is_mw_jal;
 
-    bypass bypassUnit(dx_ir_out, xm_ir_curr, mw_ir_out, xm_overflow_out, mw_ovf_out, mux_inpa_select, mux_inpb_select, mux_wmselect);
+    //module bypass(dx_ir, xm_ir, mw_ir, xm_ovf_out, mw_ovf_out, muxA_select, muxB_select, wmSelect);
+    bypass bypassUnit(dx_ir_out, xm_ir_curr, mw_ir_out, 1'b0, 1'b0, mux_inpa_select, mux_inpb_select, mux_wmselect);
 
 
 

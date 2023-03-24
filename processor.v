@@ -78,10 +78,10 @@ module processor(
     wire [4:0] imemOpcode;
     assign imemOpcode = q_imem[31:27];
     assign isImemJump = (imemOpcode == 5'b00001) | (imemOpcode == 5'b00011) === 1'b1;
-    assign pcNextActual = isImemJump ? q_imem[26:0] : pcAdv;
+    assign pcNextActual = isImemJump ? q_imem[26:0] : (is_dx_jr ? data_readRegB : pcAdv);
 
-    //mux_2 jrMux(fd_isJr,pcNextActual,data_readRegB);
-    //
+     
+
 
 
 //FD stage
@@ -90,7 +90,7 @@ module processor(
 
     //Disable enable toggle if time to stall later
     //module fd_latch(clk, enable, cPc, inIns, pcOut, insOut);
-    fd_latch fd(!clock, 1'b1, pcActive, q_imem, fd_pc_out, fd_ir_out);
+    fd_latch fd(!clock, 1'b1, pcActive, fd_isJr ? 32'b0 : q_imem, fd_pc_out, fd_ir_out);
 
     wire [4:0] fd_opcode;
     assign fd_opcode = fd_ir_out[31:27];
@@ -104,6 +104,8 @@ module processor(
 
     wire fd_isJr;
     assign fd_isJr = (fd_opcode==00100);
+
+    
 
 
 
@@ -126,6 +128,9 @@ module processor(
     // get operation for execute stage
     wire [4:0] dx_opcode;
     assign dx_opcode = dx_ir_out[31:27];
+
+    wire is_dx_jr;
+    assign is_dx_jr = (dx_opcode == 00100);
 
     // // Feed into XM stage
     // wire [1:0] mux_b;
@@ -271,7 +276,7 @@ module processor(
     //Disable write enable with other instruction types as added
     assign ctrl_writeEnable = is_mw_lw | is_mw_addi | is_mw_rOp | is_mw_jal;
 
-    bypass bypassUnit(dx_ir_out, xm_ir_curr, mw_ir_out, xm_ovf_out, mw_ovf_real, mux_inpa_select, mux_inpb_select, mux_wmselect);
+    bypass bypassUnit(dx_ir_out, xm_ir_curr, mw_ir_out, xm_ovf_out, mw_ovf_real q, mux_inpa_select, mux_inpb_select, mux_wmselect);
 
 
 

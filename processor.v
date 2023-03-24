@@ -78,11 +78,11 @@ module processor(
     wire [4:0] imemOpcode;
     assign imemOpcode = q_imem[31:27];
     assign isImemJump = (imemOpcode == 5'b00001) | (imemOpcode == 5'b00011) === 1'b1;
-    
     assign pcNextActual = isImemJump ? q_imem[26:0] : pcAdv;
 
+    //mux_2 jrMux(fd_isJr,pcNextActual,data_readRegB);
 
-    //for JAL, we can already jump to the new pc, but need to store the pc to reg 31
+
 
 //FD stage
 
@@ -102,9 +102,14 @@ module processor(
     wire fd_isAddI;
     assign fd_isAddI = ~fd_opcode[4] & ~fd_opcode[3] & fd_opcode[2] & ~fd_opcode[1] & fd_opcode[0];
 
+    wire fd_isJr;
+    assign fd_isJr = (fd_opcode==00100);
+
+
+
 
     assign ctrl_readRegA = fd_ir_out[21:17];
-    //If not r type, read I type result FIX WHEN J
+    //Reads properly for both jr and imm
     assign ctrl_readRegB = fd_isR ? fd_ir_out[16:12] : fd_ir_out[26:22];
 
 
@@ -129,7 +134,8 @@ module processor(
     wire [31:0] inp_a, inp_b;
     wire [31:0] alu_b_mux_out;
 
-    wire [1:0] mux_inpa_select, mux_inpb_select, mux_wmselect;
+    wire [1:0] mux_inpa_select, mux_inpb_select;
+    wire mux_wmselect;
     //module mux_4(in0, in1, in2, in3, out, sel);
 
 

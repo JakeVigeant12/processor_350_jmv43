@@ -188,7 +188,12 @@ module processor(
     assign multdiv_in_b = dx_ir_out[16:12];
 
     
-    // multdiv muldivunit(multdiv_inpa, multdiv_inpb, isMult, isDiv, mdivClk, mdiv_result, is_mdiv_exception, is_result_ready);
+    wire [31:0] multdiv_in_a, multdiv_in_b, multdiv_ir, multdiv_result;
+    wire multdiv_is_running, multdiv_exception, multdiv_result_ready;
+
+    mdiv_latch multdiv_latch(clock, ctrl_mult | ctrl_div, multdiv_is_running, multdiv_result_ready, alu_in_a, alu_in_b, dx_ir_out, multdiv_in_a, multdiv_in_b, multdiv_ir);
+    multdiv multdiv_unit(multdiv_in_a, multdiv_in_b, ctrl_mult, ctrl_div, clock, multdiv_result, multdiv_exception, multdiv_result_ready);
+
 
     //Overflow from all arithematic units
     //JR
@@ -198,12 +203,12 @@ module processor(
     cla_full_adder jalPC(,32'b1,1'b0,jal_pc);
     wire overflow;
     //CHECK IF MDIV OVF WHEN IMPLEMENTED
-    assign overflow = alu_overflow;
+    assign overflow = alu_overflow | (multdiv_exception & multdiv_result_ready);
 
 
     //module rstatus_res(alu_op, op, rstatus_write_val);
     wire [31:0] rstatus_exception_val;
-    rstatus_res assignExcept(alu_opcode, dx_opcode, rstatus_exception_val);
+    rstatus_res assignExcept(multdiv_result_ready ? multdiv_ir[6:2] : alu_opcode, multdiv_result_ready ? multdiv_ir[31:27] : dx_opcode, rstatus_exception_val);
 
 
     wire [31:0] xm_o_in;
@@ -255,6 +260,7 @@ module processor(
     //out, inp, enab
     tri_state_buffer aluData(data_writeReg, mw_o_out, (is_mw_rOp));
     tri_state_buffer lw(data_writeReg, mw_d_out, (is_mw_lw));
+
 
 
 

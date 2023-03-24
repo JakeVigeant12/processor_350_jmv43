@@ -57,5 +57,6 @@
 ./mult_div_processor/counter.v
 ./mult_div_processor/eightbitlookahead.v
 ./ROM.v
+./mdiv_inplatch.v
 ./dx_latch.v
 ./mw_latch.v

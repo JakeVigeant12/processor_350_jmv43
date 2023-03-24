@@ -77,7 +77,7 @@ module processor(
     wire isImemJump;
     wire [4:0] imemOpcode;
     assign imemOpcode = q_imem[31:27];
-    assign isImemJump = (imemOpcode == 5'b00001) | (imemOpcode == 5'b00011) === 1'b1;
+    assign isImemJump = (imemOpcode === 5'b00001) | (imemOpcode === 5'b00011) === 1'b1;
     assign pcNextActual =  (is_dx_jr ? data_readRegB : pcAdv);
 
      

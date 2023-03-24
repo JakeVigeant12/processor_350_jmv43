@@ -203,7 +203,7 @@ module processor(
     wire [4:0] xm_opcode;
     assign xm_opcode = xm_ir_curr[31:27];
     assign address_dmem = xm_o_out;
-    assign data = mux_wmselect ? data_writeReg : xm_b_out;
+    assign data =  xm_b_out;
     wire is_sw_xm;
     //Allow writes to dmem only if instruction is store word
     assign is_sw_xm = ~xm_opcode[4] & ~xm_opcode[3] & xm_opcode[2] & xm_opcode[1] & xm_opcode[0];

@@ -81,7 +81,7 @@ module processor(
     assign pcNextActual = isImemJump ? q_imem[26:0] : pcAdv;
 
     //mux_2 jrMux(fd_isJr,pcNextActual,data_readRegB);
-
+    //
 
 
 //FD stage
@@ -220,9 +220,9 @@ module processor(
 //XM stage
     //module xm_latch(clk, o_in, ovfIn, b_in, inIns,  o_out, outOvf, bOut, insOut);
     wire [31:0] xm_o_out, xm_b_out, xm_ir_curr;
-    wire xm_overflow_out;
+    wire xm_overflow_out, xm_ovf_out;
     xm_latch xm(!clock, xm_o_in, overflow, bybassBout, dx_ir_out, xm_o_out, xm_overflow_out, xm_b_out, xm_ir_curr);
-
+    assign xm_ovf_out = xm_overflow_out === 1'b1; 
     //HANDLE data memory reads and writes here
     //Wire data and memory adress in case of sw
     wire [4:0] xm_opcode;
@@ -242,10 +242,10 @@ module processor(
 //MW Stage
     wire is_mw_jal;
     wire [31:0] mw_o_out, mw_d_out, mw_ir_out;
-    wire mw_ovf_out;
+    wire mw_ovf_out, mw_ovf_real;
     //module mw_latch(clk, o_in, ovfIn, d_in, inIns,  o_out, outOvf, dOut, insOut);
-    mw_latch mw(!clock, xm_o_out, xm_overflow_out, q_dmem, xm_ir_curr, mw_o_out, mw_ovf_out, mw_d_out, mw_ir_out);
-
+    mw_latch mw(!clock, xm_o_out, xm_ovf_out, q_dmem, xm_ir_curr, mw_o_out, mw_ovf_out, mw_d_out, mw_ir_out);
+    assign mw_ovf_real = mw_ovf_out === 1'b1;
     //If jal, change data to dlatch pc
     assign is_mw_jal = (mw_ir_out == 32'b00000111110000000000000000000000) === 1'b1;
 
@@ -267,11 +267,11 @@ module processor(
     mux_2 writebackmux(data_writeReg, is_mw_lw, mw_o_out, mw_d_out);
 
     //assign writeback reg, changes if status
-    assign ctrl_writeReg = (mw_ovf_out) && !is_mw_jal ? 5'd30 : mw_ir_out[26:22];
+    assign ctrl_writeReg = (mw_ovf_real) && !is_mw_jal ? 5'd30 : mw_ir_out[26:22];
     //Disable write enable with other instruction types as added
     assign ctrl_writeEnable = is_mw_lw | is_mw_addi | is_mw_rOp | is_mw_jal;
 
-    bypass bypassUnit(dx_ir_out, xm_ir_curr, mw_ir_out, 1'b0, 1'b0, mux_inpa_select, mux_inpb_select, mux_wmselect);
+    bypass bypassUnit(dx_ir_out, xm_ir_curr, mw_ir_out, xm_ovf_out, mw_ovf_real, mux_inpa_select, mux_inpb_select, mux_wmselect);
 
 
 

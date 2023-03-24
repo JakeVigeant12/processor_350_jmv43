@@ -17,14 +17,14 @@ module bypass(dx_ir, xm_ir, mw_ir, xm_ovf_out, mw_ovf_out, muxA_select, muxB_sel
 
     //Instruction types
     wire  is_mw_setx, is_xm_branch, is_mw_sw, is_mw_branch, is_xm_sw, is_dx_rOp, is_xm_setx, is_dx_bex;
-    assign is_dx_rOp = (dx_opcode == 00000);
+    assign is_dx_rOp = (dx_opcode === 00000);
     assign is_xm_sw = (xm_opcode === 5'b00111);
     assign is_mw_sw = (mw_opcode === 5'b00111);
-    assign is_xm_setx = (xm_opcode == 10101);
-    assign is_mw_setx = (mw_opcode == 10101);
-    assign is_dx_bex = (dx_opcode == 10110);
-    assign is_mw_branch = (mw_opcode == 00010) | (mw_opcode == 00110);
-    assign is_xm_branch = (xm_opcode == 00010) | (xm_opcode == 00110);
+    assign is_xm_setx = (xm_opcode === 10101);
+    assign is_mw_setx = (mw_opcode === 10101);
+    assign is_dx_bex = (dx_opcode === 10110);
+    assign is_mw_branch = (mw_opcode === 00010) | (mw_opcode === 00110);
+    assign is_xm_branch = (xm_opcode === 00010) | (xm_opcode === 00110);
 
     //conditions for alu input muxes
     wire [4:0] dx_a, dx_b, xm_rd_ins, mw_rd_ins, xm_rd, mw_rd;

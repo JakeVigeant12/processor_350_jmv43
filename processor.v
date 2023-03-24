@@ -78,7 +78,7 @@ module processor(
     wire [4:0] imemOpcode;
     assign imemOpcode = q_imem[31:27];
     assign isImemJump = (imemOpcode == 5'b00001) | (imemOpcode == 5'b00011) === 1'b1;
-    assign pcNextActual = isImemJump ? q_imem[26:0] : (fd_isJr ? data_readRegB : pcAdv);
+    assign pcNextActual = isImemJump ? q_imem[26:0] : (is_dx_jr ? data_readRegB : pcAdv);
 
      
 
@@ -123,14 +123,14 @@ module processor(
     wire [31:0] dx_ir_in, dx_pcOut, dx_a_curr, dx_b_curr, dx_ir_out;
     assign dx_ir_in = is_fd_jal ? 32'b00000111110000000000000000000000 : fd_ir_out;
     //module dx_latch(clk, cPc, a_in, b_in, inIns, pcOut, aOut, bOut, insOut);
-    dx_latch dx(!clock, fd_pc_out, data_readRegA, data_readRegB, dx_ir_in, dx_pcOut, dx_a_curr, dx_b_curr, dx_ir_out);
+    dx_latch dx(!clock, fd_pc_out, data_readRegA, data_readRegB, is_dx_jr ? 32'b0: dx_ir_in, dx_pcOut, dx_a_curr, dx_b_curr, dx_ir_out);
 
     // get operation for execute stage
     wire [4:0] dx_opcode;
     assign dx_opcode = dx_ir_out[31:27];
 
     wire is_dx_jr;
-    // assign is_dx_jr = (dx_opcode === 5'b00100);
+    assign is_dx_jr = (dx_opcode === 5'b00100);
 
     // // Feed into XM stage
     // wire [1:0] mux_b;

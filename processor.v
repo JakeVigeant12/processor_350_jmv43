@@ -78,6 +78,7 @@ module processor(
     wire [4:0] imemOpcode;
     assign imemOpcode = q_imem[31:27];
     assign isImemJump = (imemOpcode == 5'b00001) | (imemOpcode == 5'b00011) === 1'b1;
+    assign isImemJR = (imemOpcode == 00100) === 1'b1;
     
     assign pcNextActual = isImemJump ? q_imem[26:0] : pcAdv;
 
@@ -257,7 +258,7 @@ module processor(
     assign ctrl_writeEnable = is_mw_lw | is_mw_addi | is_mw_rOp | is_mw_jal;
 
     //module bypass(dx_ir, xm_ir, mw_ir, xm_ovf_out, mw_ovf_out, muxA_select, muxB_select, wmSelect);
-    bypass bypassUnit(dx_ir_out, xm_ir_curr, mw_ir_out, 1'b0, 1'b0, mux_inpa_select, mux_inpb_select, mux_wmselect);
+    bypass bypassUnit(dx_ir_out, xm_ir_curr, mw_ir_out, xm_overflow_out, mw_ovf_out, mux_inpa_select, mux_inpb_select, mux_wmselect);
 
 
 

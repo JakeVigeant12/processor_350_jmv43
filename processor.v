@@ -187,11 +187,11 @@ module processor(
 
     wire [31:0] jal_pc;
     //(a, b, c_in, s);
-    cla_full_adder jalPC(dx_pcOut,32'b1,1'b0,jal_pc);
+    cla_full_adder jalPC(,32'b1,1'b0,jal_pc);
     wire overflow;
     assign overflow = alu_overflow;
     wire [31:0] xm_o_in;
-    assign xm_o_in = dx_is_jal ? jal_pc : alu_out;
+    assign xm_o_in = dx_is_jal ? dx_pcOut : alu_out;
 //XM stage
     //module xm_latch(clk, o_in, ovfIn, b_in, inIns,  o_out, outOvf, bOut, insOut);
     wire [31:0] xm_o_out, xm_b_out, xm_ir_curr;

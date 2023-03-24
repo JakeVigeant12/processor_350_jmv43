@@ -68,7 +68,7 @@ module processor(
     wire [31:0] pcActive, pcAdv, fd_pc_out, fd_ir_out, pcNextActual;
     //module pc_reg(clock, reset, in_enable, in, out);
     //load next pc into 
-    pc_reg pc(clock, reset, 1'b1, pcNextActual, pcActive); 
+    pc_reg pc(!clock, reset, 1'b1, pcNextActual, pcActive); 
     assign address_imem = pcActive; 
     //module cla_full_adder(a, b, c_in, s);\
     cla_full_adder inc_pc(pcActive, 1, 1'b0, pcAdv); 
@@ -129,10 +129,11 @@ module processor(
     wire [31:0] inp_a, inp_b;
     wire [31:0] alu_b_mux_out;
 
+    wire [1:0] mux_inpa_select, mux_inpb_select, mux_wmselect;
     //module mux_4(in0, in1, in2, in3, out, sel);
-    //ADD BYPASS UNIT ALU_A SELECT
-    assign inp_a = dx_a_curr;
-    // mux_4 aluAmux(xm_o_out,data_writeReg,dx_a_curr,32'b0,inp_a,bypass_alu_a_select)
+
+
+    mux_4 aluAinputmux(xm_o_out,data_writeReg,dx_a_curr,32'b0,inp_a,mux_inpa_select);
     //Get immediate value
     wire [31:0] imm;
     assign imm[16:0] = dx_ir_out[16:0];
@@ -149,7 +150,10 @@ module processor(
     assign dx_is_jal = (dx_ir_out == 32'b00000111110000000000000000000000);
 
     assign dx_is_I = dx_is_addi | dx_is_sw_I | dx_is_lw_I;
-    mux_2 operandBMux(inp_b,dx_is_I,dx_b_curr,imm);
+    wire [31:0] bybassBout;
+    //module mux_4(in0, in1, in2, in3, out, sel);
+    mux_4 aluBmuxBypass(xm_o_out,data_writeReg,dx_b_curr,32'b0,bybassBout,mux_inpb_select);
+    mux_2 operandBMux(inp_b,dx_is_I,bybassBout,imm);
 
 
     //Wire through ALU inputs, shamt, op
@@ -192,14 +196,14 @@ module processor(
     //module xm_latch(clk, o_in, ovfIn, b_in, inIns,  o_out, outOvf, bOut, insOut);
     wire [31:0] xm_o_out, xm_b_out, xm_ir_curr;
     wire xm_overflow_out;
-    xm_latch xm(!clock, xm_o_in, overflow, dx_b_curr, dx_ir_out, xm_o_out, xm_overflow_out, xm_b_out, xm_ir_curr);
+    xm_latch xm(!clock, xm_o_in, overflow, bybassBout, dx_ir_out, xm_o_out, xm_overflow_out, xm_b_out, xm_ir_curr);
 
     //HANDLE data memory reads and writes here
     //Wire data and memory adress in case of sw
     wire [4:0] xm_opcode;
     assign xm_opcode = xm_ir_curr[31:27];
     assign address_dmem = xm_o_out;
-    assign data = xm_b_out;
+    assign data = mux_wmselect ? data_writeReg : xm_b_out;
     wire is_sw_xm;
     //Allow writes to dmem only if instruction is store word
     assign is_sw_xm = ~xm_opcode[4] & ~xm_opcode[3] & xm_opcode[2] & xm_opcode[1] & xm_opcode[0];
@@ -235,7 +239,8 @@ module processor(
     //Disable write enable with other instruction types as added
     assign ctrl_writeEnable = is_mw_lw | is_mw_addi | is_mw_rOp | is_mw_jal;
 
-    //LW into registers is not working
+    bypass bypassUnit(dx_ir_out, xm_ir_curr, mw_ir_out, 1'b0, 1'b0, mux_inpa_select, mux_inpb_select, mux_wmselect);
+
 
 
 // 	/* END CODE */

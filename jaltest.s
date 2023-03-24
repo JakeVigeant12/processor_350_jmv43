@@ -21,7 +21,6 @@ addi 	$r20, $r20, 1	# r20 += 1 (Incorrect)
 j2:
 addi	$r10, $r10, 1	# r10 += 1 (Correct)
 nop
-nop
 add	$r10, $r10, $r31 # r10 = r10 + 17
 nop
 nop

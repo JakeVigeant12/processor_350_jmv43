@@ -41,6 +41,7 @@
 ./RAM.v
 ./dffe_neg.v
 ./processor.v
+./bypass.v
 ./mult_div_processor/mult.v
 ./mult_div_processor/aq_reg.v
 ./mult_div_processor/ctrl_reg.v

@@ -1,6 +1,5 @@
 Cycle   6: Wrote 4 into register 1
 Cycle   7: Wrote 5 into register 2
-Cycle   9: Wrote 69 into register 8
 Cycle  10: Wrote 69 into register 8
 ============== Testing Mode ==============
 Reg  0:           0

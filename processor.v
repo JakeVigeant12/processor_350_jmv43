@@ -69,7 +69,7 @@ module processor(
     //module pc_reg(clock, reset, in_enable, in, out);
     //load next pc into 
     pc_reg pc(!clock, reset, 1'b1, pcNextActual, pcActive); 
-    assign address_imem = isImemJump ? q_imem[26:0] : pcActive; 
+    assign address_imem = pcActive; 
     //module cla_full_adder(a, b, c_in, s);\
     cla_full_adder inc_pc(pcActive, 1, 1'b0, pcAdv); 
 
@@ -77,8 +77,8 @@ module processor(
     wire isImemJump;
     wire [4:0] imemOpcode;
     assign imemOpcode = q_imem[31:27];
-    assign isImemJump = (imemOpcode === 5'b00001) | (imemOpcode === 5'b00011) === 1'b1;
-    assign pcNextActual =  (is_dx_jr ? data_readRegB : pcAdv);
+    assign isImemJump = (imemOpcode == 5'b00001) | (imemOpcode == 5'b00011) === 1'b1;
+    assign pcNextActual = isImemJump ? q_imem[26:0] : (is_dx_jr ? data_readRegB : pcAdv);
 
      
 
@@ -90,7 +90,7 @@ module processor(
 
     //Disable enable toggle if time to stall later
     //module fd_latch(clk, enable, cPc, inIns, pcOut, insOut);
-    fd_latch fd(!clock, 1'b1, pcActive, fd_isJr ? 32'b0 : q_imem, fd_pc_out, fd_ir_out);
+    fd_latch fd(!clock, 1'b1, pcActive, fd_isJr | fd_isJu ? 32'b0 : q_imem, fd_pc_out, fd_ir_out);
 
     wire [4:0] fd_opcode;
     assign fd_opcode = fd_ir_out[31:27];
@@ -104,6 +104,9 @@ module processor(
 
     wire fd_isJr;
     assign fd_isJr = (fd_opcode=== 5'b00100);
+
+    wire fd_isJu;
+    assign fd_isJu = (fd_opcode === 5'b00001);
 
     
 

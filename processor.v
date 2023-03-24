@@ -129,7 +129,8 @@ module processor(
     wire [31:0] inp_a, inp_b;
     wire [31:0] alu_b_mux_out;
 
-    wire [1:0] mux_inpa_select, mux_inpb_select, mux_wmselect;
+    wire [1:0] mux_inpa_select, mux_inpb_select;
+    wire mux_wmselect;
     //module mux_4(in0, in1, in2, in3, out, sel);
 
 

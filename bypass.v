@@ -18,8 +18,8 @@ module bypass(dx_ir, xm_ir, mw_ir, xm_ovf_out, mw_ovf_out, muxA_select, muxB_sel
     //Instruction types
     wire  is_mw_setx, is_xm_branch, is_mw_sw, is_mw_branch, is_xm_sw, is_dx_rOp, is_xm_setx, is_dx_bex;
     assign is_dx_rOp = (dx_opcode == 00000);
-    assign is_xm_lw = (xm_opcode == 01000);
-    assign is_mw_lw = (mw_opcode == 01000);
+    assign is_xm_sw = (xm_opcode == 00111);
+    assign is_mw_sw = (mw_opcode == 00111);
     assign is_xm_setx = (xm_opcode == 10101);
     assign is_mw_setx = (mw_opcode == 10101);
     assign is_dx_bex = (dx_opcode == 10110);
@@ -38,10 +38,10 @@ module bypass(dx_ir, xm_ir, mw_ir, xm_ovf_out, mw_ovf_out, muxA_select, muxB_sel
 
     //Check data hazards
     wire xm_a_hz, mw_a_hz, xm_b_hz, mw_b_hz;
-    assign xm_a_hz = is_xm_lw && !is_xm_branch && dx_a == xm_rd && !(is_xm_rd_0); 
-    assign mw_a_hz = is_mw_lw && !is_mw_branch && dx_a == mw_rd && !(is_mw_rd_0); 
-    assign xm_b_hz = is_xm_lw && !is_xm_branch && dx_b == xm_rd && !(is_xm_rd_0); 
-    assign mw_b_hz = is_mw_lw && !is_mw_branch && dx_b == mw_rd && !(is_mw_rd_0);
+    assign xm_a_hz = !is_xm_sw && !is_xm_branch && dx_a == xm_rd && !(is_xm_rd_0); 
+    assign mw_a_hz = !is_mw_sw && !is_mw_branch && dx_a == mw_rd && !(is_mw_rd_0); 
+    assign xm_b_hz = !is_xm_sw && !is_xm_branch && dx_b == xm_rd && !(is_xm_rd_0); 
+    assign mw_b_hz = !is_mw_sw && !is_mw_branch && dx_b == mw_rd && !(is_mw_rd_0);
 
     // ovf and setx reg30's , otherwise default to coded values
     assign xm_rd = !(xm_ovf_out || is_xm_setx) ? xm_rd_ins : 5'd30;
@@ -56,6 +56,6 @@ module bypass(dx_ir, xm_ir, mw_ir, xm_ovf_out, mw_ovf_out, muxA_select, muxB_sel
 
 
     // WM bypassing
-    assign wmSelect = is_xm_lw && (xm_rd_ins == mw_rd_ins);
+    assign wmSelect = is_xm_sw && (xm_rd_ins == mw_rd_ins);
 
 endmodule

@@ -212,8 +212,10 @@ module processor(
     //module xm_latch(clk, o_in, ovfIn, b_in, inIns,  o_out, outOvf, bOut, insOut);
     wire [31:0] xm_o_out, xm_b_out, xm_ir_curr;
     wire xm_overflow_out;
+    wire xm_byp_ovf;
     xm_latch xm(!clock, xm_o_in, overflow, bybassBout, dx_ir_out, xm_o_out, xm_overflow_out, xm_b_out, xm_ir_curr);
 
+    assign xm_byp_ovf = xm_overflow_out === 1'b1;
     //HANDLE data memory reads and writes here
     //Wire data and memory adress in case of sw
     wire [4:0] xm_opcode;
@@ -232,7 +234,8 @@ module processor(
     wire mw_ovf_out;
     //module mw_latch(clk, o_in, ovfIn, d_in, inIns,  o_out, outOvf, dOut, insOut);
     mw_latch mw(!clock, xm_o_out, xm_overflow_out, q_dmem, xm_ir_curr, mw_o_out, mw_ovf_out, mw_d_out, mw_ir_out);
-
+    wire mw_byp_ovf;
+    assign mw_byp_ovf = mw_ovf_out === 1'b1;
     //If jal, change data to dlatch pc
     assign is_mw_jal = (mw_ir_out == 32'b00000111110000000000000000000000) === 1'b1;
 
@@ -258,7 +261,7 @@ module processor(
     assign ctrl_writeEnable = is_mw_lw | is_mw_addi | is_mw_rOp | is_mw_jal;
 
     //module bypass(dx_ir, xm_ir, mw_ir, xm_ovf_out, mw_ovf_out, muxA_select, muxB_select, wmSelect);
-    bypass bypassUnit(dx_ir_out, xm_ir_curr, mw_ir_out, xm_overflow_out, mw_ovf_out, mux_inpa_select, mux_inpb_select, mux_wmselect);
+    bypass bypassUnit(dx_ir_out, xm_ir_curr, mw_ir_out, xm_byp_ovf, mw_byp_ovf, mux_inpa_select, mux_inpb_select, mux_wmselect);
 
 
 

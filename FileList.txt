@@ -36,6 +36,7 @@
 ./alucheckk/mux_8.v
 ./alucheckk/mux_2.v
 ./alucheckk/left_barrel_shifter.v
+./rstatushandling.v
 ./pc_reg.v
 ./Wrapper.v
 ./RAM.v

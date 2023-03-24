@@ -169,6 +169,7 @@ module processor(
     alu ula(inp_a, inp_b, alu_opcode, shamt, alu_out, is_not_equal, is_less_than, alu_overflow);
 
 
+
     //module multdiv(
 	// data_operandA, data_operandB,
 	// ctrl_MULT, ctrl_DIV,
@@ -184,14 +185,27 @@ module processor(
     // multdiv muldivunit(multdiv_inpa, multdiv_inpb, isMult, isDiv, mdivClk, mdiv_result, is_mdiv_exception, is_result_ready);
 
     //Overflow from all arithematic units
+    //JR
 
     wire [31:0] jal_pc;
     //(a, b, c_in, s);
     cla_full_adder jalPC(,32'b1,1'b0,jal_pc);
     wire overflow;
+    //CHECK IF MDIV OVF WHEN IMPLEMENTED
     assign overflow = alu_overflow;
+
+
+    //module rstatus_res(alu_op, op, rstatus_write_val);
+    wire [31:0] rstatus_exception_val;
+    rstatus_res assignExcept(alu_opcode, dx_opcode, rstatus_exception_val);
+
+
     wire [31:0] xm_o_in;
-    assign xm_o_in = dx_is_jal ? dx_pcOut : alu_out;
+    assign xm_o_in = (dx_is_jal&&!overflow) ? dx_pcOut : (overflow && !dx_is_jal ? rstatus_exception_val : alu_out);
+
+
+
+
 //XM stage
     //module xm_latch(clk, o_in, ovfIn, b_in, inIns,  o_out, outOvf, bOut, insOut);
     wire [31:0] xm_o_out, xm_b_out, xm_ir_curr;
@@ -203,7 +217,7 @@ module processor(
     wire [4:0] xm_opcode;
     assign xm_opcode = xm_ir_curr[31:27];
     assign address_dmem = xm_o_out;
-    assign data =  xm_b_out;
+    assign data = mux_wmselect ? data_writeReg : xm_b_out;
     wire is_sw_xm;
     //Allow writes to dmem only if instruction is store word
     assign is_sw_xm = ~xm_opcode[4] & ~xm_opcode[3] & xm_opcode[2] & xm_opcode[1] & xm_opcode[0];
@@ -235,7 +249,9 @@ module processor(
 
 
     mux_2 writebackmux(data_writeReg, is_mw_lw, mw_o_out, mw_d_out);
-    assign ctrl_writeReg = mw_ir_out[26:22];
+
+    //assign writeback reg, changes if status
+    assign ctrl_writeReg = (mw_ovf_out) && !is_mw_jal ? 5'd30 : mw_ir_out[26:22];
     //Disable write enable with other instruction types as added
     assign ctrl_writeEnable = is_mw_lw | is_mw_addi | is_mw_rOp | is_mw_jal;
 

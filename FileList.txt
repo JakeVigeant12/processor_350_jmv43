@@ -39,6 +39,7 @@
 ./rstatushandling.v
 ./pc_reg.v
 ./Wrapper.v
+./control.v
 ./RAM.v
 ./dffe_neg.v
 ./processor.v

@@ -1,12 +1,2 @@
-# Processor
-## NAME (NETID)
-
-## Description of Design
-
-## Bypassing
-
-## Stalling
-
-## Optimizations
-
-## Bugs
+# Processor Checkpoint for ECE 350
+## Marcus Deans (md374)

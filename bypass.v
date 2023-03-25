@@ -59,3 +59,4 @@ module bypass(dx_ir, xm_ir, mw_ir, xm_ovf_out, mw_ovf_out, muxA_select, muxB_sel
     assign wmSelect = is_xm_sw && (xm_rd_ins == mw_rd_ins);
 
 endmodule
+

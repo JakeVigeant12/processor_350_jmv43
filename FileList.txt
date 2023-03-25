@@ -1,3 +1,4 @@
+./stall.v
 ./regfile_processor/regfile_tb.v
 ./regfile_processor/register.v
 ./regfile_processor/dffe_ref.v
@@ -36,13 +37,14 @@
 ./alucheckk/mux_8.v
 ./alucheckk/mux_2.v
 ./alucheckk/left_barrel_shifter.v
-./rstatushandling.v
 ./pc_reg.v
 ./Wrapper.v
+./control.v
 ./RAM.v
 ./dffe_neg.v
 ./processor.v
 ./bypass.v
+./rstat.v
 ./mult_div_processor/mult.v
 ./mult_div_processor/aq_reg.v
 ./mult_div_processor/ctrl_reg.v
@@ -57,6 +59,6 @@
 ./mult_div_processor/counter.v
 ./mult_div_processor/eightbitlookahead.v
 ./ROM.v
-./mdiv_inplatch.v
+./mdiv_latch.v
 ./dx_latch.v
 ./mw_latch.v

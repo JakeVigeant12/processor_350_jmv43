@@ -18,7 +18,7 @@ module RAM #( parameter DATA_WIDTH = 32, ADDRESS_WIDTH = 12, DEPTH = 4096) (
         // end
     end
     
-    always @(posedge clk) begin
+    always @(negedge clk) begin
         if(wEn) begin
             MemoryArray[addr] <= dataIn;
         end else begin

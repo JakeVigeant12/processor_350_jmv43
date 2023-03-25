@@ -61,227 +61,159 @@ module processor(
 	output [31:0] data_writeReg;
 	input [31:0] data_readRegA, data_readRegB;
 
+    /* YOUR CODE STARTS HERE */
 
-	/* YOUR CODE STARTS HERE */
 
-//PC 
-    wire [31:0] pcActive, pcAdv, fd_pc_out, fd_ir_out, pcNextActual;
-    //module pc_reg(clock, reset, in_enable, in, out);
-    //load next pc into 
-    pc_reg pc(!clock, reset, 1'b1, pcNextActual, pcActive); 
-    assign address_imem = pcActive; 
-    //module cla_full_adder(a, b, c_in, s);\
-    cla_full_adder inc_pc(pcActive, 1, 1'b0, pcAdv); 
+//PC
+    wire [31:0] pc, pcAdv, pc_next, fd_pc_out, fd_ins_curr;
+    //hold current pc
+    pc_reg pcReg(clock, reset, ~stall, pc_next, pc); 
+    assign address_imem = pc; 
 
-    //CHECK IMEM JUMP BEFORE ITS SENT INTO LATCH
-    wire isImemJump;
-    wire [4:0] imemOpcode;
+    //module cla_full_adder(a, b, c_in, s);
+    //next pc line out
+    cla_full_adder inc_pc(pc, 1, 0, pcAdv); 
+    //next pc fetched with refactored out control logic
+    wire imemOpcode, isImemJump, pcNextActual;
     assign imemOpcode = q_imem[31:27];
     assign isImemJump = (imemOpcode == 5'b00001) | (imemOpcode == 5'b00011) === 1'b1;
     assign pcNextActual = isImemJump ? q_imem[26:0] : (is_dx_jr ? data_readRegB : pcAdv);
 
-     
+//FD
+    wire doNop;
+    assign doNop = bj;
 
+    wire[31:0] nop;
+    assign nop = 32'b0;
+    fd_latch fd(clock, ~stall, pc, doNop ? nop : q_imem, fd_pc_out, fd_ins_curr);
 
-
-//FD stage
-
-
-
-    //Disable enable toggle if time to stall later
-    //module fd_latch(clk, enable, cPc, inIns, pcOut, insOut);
-    fd_latch fd(!clock, 1'b1, pcActive, fd_isJr | fd_isJu ? 32'b0 : q_imem, fd_pc_out, fd_ir_out);
-
+  
     wire [4:0] fd_opcode;
-    assign fd_opcode = fd_ir_out[31:27];
+    assign fd_opcode = fd_ins_curr[31:27];
 
-    //CHheck if R type instruction
-    wire fd_isR;
-    assign fd_isR = ~fd_opcode[4] & ~fd_opcode[3] & ~fd_opcode[2] & ~fd_opcode[1] & ~fd_opcode[0];
-    //Check if add I instruction
-    wire fd_isAddI;
-    assign fd_isAddI = ~fd_opcode[4] & ~fd_opcode[3] & fd_opcode[2] & ~fd_opcode[1] & fd_opcode[0];
+    wire fd_rOp, fd_bex;
+    assign fd_rOp = (fd_opcode === 5'b00000);
+    assign fd_bex = (fd_opcode === 5'b10110);
 
-    wire fd_isJr;
-    assign fd_isJr = (fd_opcode=== 5'b00100);
+    assign ctrl_readRegA = fd_ins_curr[21:17];
+    assign ctrl_readRegB = fd_rOp ? fd_ins_curr[16:12] : (!fd_bex ? fd_ins_curr[26:22] : 5'd30);
 
-    wire fd_isJu;
-    assign fd_isJu = (fd_opcode === 5'b00001);
+//DX
+    wire [31:0] dx_ins_in, dx_pc_out, dx_a_out, dx_b_out, dx_ins_out;
 
-    
+    dx_latch dx(clock, fd_pc_out, data_readRegA, data_readRegB, bj ? 32'b0 : (stall ? 32'b0 : fd_ins_curr), dx_pc_out, dx_a_out, dx_b_out, dx_ins_out);
 
-
-
-
-    assign ctrl_readRegA = fd_ir_out[21:17];
-    //Reads properly for both jr and imm
-    assign ctrl_readRegB = fd_isR ? fd_ir_out[16:12] : fd_ir_out[26:22];
-
-
-
-//DX stage
-    //Transform JAL instruction to an addition
-    wire is_fd_jal;
-    assign is_fd_jal = ~fd_opcode[4] & ~fd_opcode[3] & ~fd_opcode[2] & fd_opcode[1] & fd_opcode[0];
-    wire [31:0] dx_ir_in, dx_pcOut, dx_a_curr, dx_b_curr, dx_ir_out;
-    assign dx_ir_in = is_fd_jal ? 32'b00000111110000000000000000000000 : fd_ir_out;
-    //module dx_latch(clk, cPc, a_in, b_in, inIns, pcOut, aOut, bOut, insOut);
-    dx_latch dx(!clock, fd_pc_out, data_readRegA, data_readRegB, is_dx_jr ? 32'b0: dx_ir_in, dx_pcOut, dx_a_curr, dx_b_curr, dx_ir_out);
-
-    // get operation for execute stage
     wire [4:0] dx_opcode;
-    assign dx_opcode = dx_ir_out[31:27];
+    assign dx_opcode = dx_ins_out[31:27];
 
+
+    wire [1:0] mux_a_select, mux_b_select;
+    wire [31:0] xm_o_out;
+    
     wire is_dx_jr;
     assign is_dx_jr = (dx_opcode === 5'b00100);
-
-    // // Feed into XM stage
-    // wire [1:0] mux_b;
-    // wire [31:0] xm_o_curr;
-
-    wire [31:0] inp_a, inp_b;
-    wire [31:0] alu_b_mux_out;
-
-    wire [1:0] mux_inpa_select, mux_inpb_select;
-    wire mux_wmselect;
+    //Configure ALU Inputs
+    wire [31:0] inp_A, inp_B, binp_mux_out;
     //module mux_4(in0, in1, in2, in3, out, sel);
+    mux_4 inpAMux( xm_o_out, data_writeReg, dx_a_out, 32'b0, inp_A, mux_a_select);
+    mux_4 inpBmux(xm_o_out, data_writeReg, dx_b_out, 32'b0, binp_mux_out, mux_b_select);
 
-
-    mux_4 aluAinputmux(xm_o_out,data_writeReg,dx_a_curr,32'b0,inp_a,mux_inpa_select);
-    //Get immediate value
+    // sign extend imm
     wire [31:0] imm;
-    assign imm[16:0] = dx_ir_out[16:0];
-    //sign extend the imm
-    assign imm[31:17] = dx_ir_out[16] ? 15'b111111111111111 : 15'b0;
+    assign imm[16:0] = dx_ins_out[16:0];
+    assign imm[31:17] = dx_ins_out[16] ? 15'b111111111111111 : 15'b0;
 
-    //Choose between the immediate and the value from regB
-    //module mux_2(out, select, in0, in1);
-    wire dx_is_I,dx_is_R, dx_is_addi,dx_is_sw_I,dx_is_lw_I, dx_is_jal;
-    assign dx_is_addi = ~dx_opcode[4] & ~dx_opcode[3] & dx_opcode[2] & ~dx_opcode[1] & dx_opcode[0];
-    assign dx_is_sw_I = ~dx_opcode[4] & ~dx_opcode[3] & dx_opcode[2] & dx_opcode[1] & dx_opcode[0];
-    assign dx_is_lw_I = ~dx_opcode[4] & dx_opcode[3] & ~dx_opcode[2] & ~dx_opcode[1] & ~dx_opcode[0];
-    assign dx_is_R = ~dx_opcode[4] & ~dx_opcode[3] & ~dx_opcode[2] & ~dx_opcode[1] & ~dx_opcode[0];
-    assign dx_is_jal = (dx_ir_out == 32'b00000111110000000000000000000000);
+    wire dx_brOp, dx_rOp;
+    assign dx_brOp = (~dx_opcode[4] & ~dx_opcode[3] & ~dx_opcode[2] & dx_opcode[1] & ~dx_opcode[0]) | 
+    (~dx_opcode[4] & ~dx_opcode[3] & dx_opcode[2] & dx_opcode[1] & ~dx_opcode[0]);
 
-    assign dx_is_I = dx_is_addi | dx_is_sw_I | dx_is_lw_I;
-    wire [31:0] bybassBout;
-    //module mux_4(in0, in1, in2, in3, out, sel);
-    mux_4 aluBmuxBypass(xm_o_out,data_writeReg,dx_b_curr,32'b0,bybassBout,mux_inpb_select);
-    mux_2 operandBMux(inp_b,dx_is_I,bybassBout,imm);
+    assign dx_rOp = (dx_opcode === 5'b00000);
 
-
-    //Wire through ALU inputs, shamt, op
     wire [4:0] alu_opcode, shamt;
-    
-    //If I type, add, otherwise find
-    assign alu_opcode = dx_is_I ? 5'b0 : dx_ir_out[6:2];
-    assign shamt = dx_is_R ? dx_ir_out[11:7] : 5'b0;
+    assign alu_opcode = dx_rOp ? dx_ins_out[6:2] : (dx_brOp ? 5'b1 : 5'b0);
+    assign shamt = dx_rOp ? dx_ins_out[11:7] : 5'b0;
+    assign inp_B = (dx_rOp || dx_brOp) ? binp_mux_out : imm;
 
-    //ALU unit and output
+    //alu unit
     wire [31:0] alu_out, alu_out_ovf;
-    wire is_not_equal, is_less_than, alu_overflow;
-    alu ula(inp_a, inp_b, alu_opcode, shamt, alu_out, is_not_equal, is_less_than, alu_overflow);
+    wire notEq, lessthn, alu_overflow;
+    alu ula(inp_A, inp_B, alu_opcode, shamt, alu_out, notEq, lessthn, alu_overflow);
 
+    //mdiv coproccessor
+    wire isMult, isDiv;
+    assign isMult = dx_rOp & ~alu_opcode[4] & ~alu_opcode[3] & alu_opcode[2] & alu_opcode[1] & ~alu_opcode[0];
+    assign isDiv = dx_rOp & ~alu_opcode[4] & ~alu_opcode[3] & alu_opcode[2] & alu_opcode[1] & alu_opcode[0];
 
+    wire [31:0] mdiv_inpA, mdiv_inpB, mdiv_cIns, mdiv_res;
+    wire mdiv_runnin, mdiv_exc, mdiv_done;
 
-    //module multdiv(
-	// data_operandA, data_operandB,
-	// ctrl_MULT, ctrl_DIV,
-	// clock,
-	// data_result, data_exception, data_resultRDY);
-    // //MULTDIV, 
-    wire [32:0] multdiv_inpa, multdiv_inpb, mdiv_result;
-    wire isMult, isDiv, is_result_ready, mdivClk, is_mdiv_exception;
-    assign multdiv_in_a = dx_ir_out[21:17];
-    assign multdiv_in_b = dx_ir_out[16:12];
+    muldiv_latch mdiv(clock, isMult | isDiv, mdiv_runnin, mdiv_done, inp_A, inp_B, dx_ins_out, mdiv_inpA, mdiv_inpB, mdiv_cIns);
+    multdiv multdiv_unit(mdiv_inpA, mdiv_inpB, isMult, isDiv, clock, mdiv_res, mdiv_exc, mdiv_done);
 
-    
-    wire [31:0] multdiv_in_a, multdiv_in_b, multdiv_ir, multdiv_result;
-    wire multdiv_is_running, multdiv_exception, multdiv_result_ready;
+    wire overflow, dx_jal, dx_setx;
+    assign overflow = alu_overflow | (mdiv_exc & mdiv_done);
 
-    mdiv_latch multdiv_latch(clock, ctrl_mult | ctrl_div, multdiv_is_running, multdiv_result_ready, alu_in_a, alu_in_b, dx_ir_out, multdiv_in_a, multdiv_in_b, multdiv_ir);
-    multdiv multdiv_unit(multdiv_in_a, multdiv_in_b, ctrl_mult, ctrl_div, clock, multdiv_result, multdiv_exception, multdiv_result_ready);
+    assign dx_jal = (dx_opcode === 5'b00011);
+    assign dx_setx = (dx_opcode === 5'b10101);
 
-
-    //Overflow from all arithematic units
-    //JR
-
-    wire [31:0] jal_pc;
-    //(a, b, c_in, s);
-    cla_full_adder jalPC(,32'b1,1'b0,jal_pc);
-    wire overflow;
-    //CHECK IF MDIV OVF WHEN IMPLEMENTED
-    assign overflow = alu_overflow | (multdiv_exception & multdiv_result_ready);
-
-
-    //module rstatus_res(alu_op, op, rstatus_write_val);
-    wire [31:0] rstatus_exception_val;
-    rstatus_res assignExcept(multdiv_result_ready ? multdiv_ir[6:2] : alu_opcode, multdiv_result_ready ? multdiv_ir[31:27] : dx_opcode, rstatus_exception_val);
-
-
+    //handle differing xm o inputs w tristate, simplified ternary app.
     wire [31:0] xm_o_in;
-    assign xm_o_in = (dx_is_jal&&!overflow) ? dx_pcOut : (overflow && !dx_is_jal ? rstatus_exception_val : alu_out);
+    //module tri_state_buffer(out, inp, enable);
+    tri_state_buffer tri_alu(xm_o_in, alu_out, !overflow && !dx_jal && !dx_setx);
+    tri_state_buffer tri_ovf(xm_o_in, rstatWrite, overflow && !dx_jal && !dx_setx);
+    tri_state_buffer tri_jal(xm_o_in, dx_pc_out, !overflow && dx_jal && !dx_setx);
 
+  
+    tri_state_buffer tri_setx(xm_o_in, dx_ins_out[26:0], !overflow && !dx_jal && dx_setx);
 
-
-
-//XM stage
-    //module xm_latch(clk, o_in, ovfIn, b_in, inIns,  o_out, outOvf, bOut, insOut);
-    wire [31:0] xm_o_out, xm_b_out, xm_ir_curr;
-    wire xm_overflow_out, xm_ovf_out;
-    xm_latch xm(!clock, xm_o_in, overflow, bybassBout, dx_ir_out, xm_o_out, xm_overflow_out, xm_b_out, xm_ir_curr);
-    assign xm_ovf_out = xm_overflow_out === 1'b1; 
-    //HANDLE data memory reads and writes here
-    //Wire data and memory adress in case of sw
+// XM latch
+    wire [31:0] xm_b_out, xm_ir_out;
+    wire xm_ovf_out;
+    xm_latch xm(clock, xm_o_in, overflow, binp_mux_out, dx_ins_out, xm_o_out, xm_ovf_out, xm_b_out, xm_ir_out);
+	
+    //Read/write dmem
     wire [4:0] xm_opcode;
-    assign xm_opcode = xm_ir_curr[31:27];
+    assign xm_opcode = xm_ir_out[31:27];
+    assign wren = xm_sw;
+
+    wire xm_sw, xm_bex, wm_sel;
+    assign xm_sw = (xm_opcode === 5'b00111);
+
     assign address_dmem = xm_o_out;
-    
-    //WM bypass
-    assign data = mux_wmselect ? data_writeReg : xm_b_out;
+    assign data = wm_sel ? data_writeReg : xm_b_out;
 
-    
-    wire is_sw_xm;
-    //Allow writes to dmem only if instruction is store word
-    assign is_sw_xm = ~xm_opcode[4] & ~xm_opcode[3] & xm_opcode[2] & xm_opcode[1] & xm_opcode[0];
-    assign wren = is_sw_xm;
-    
-
-//MW Stage
-    wire is_mw_jal;
+// MW latch
     wire [31:0] mw_o_out, mw_d_out, mw_ir_out;
-    wire mw_ovf_out, mw_ovf_real;
-    //module mw_latch(clk, o_in, ovfIn, d_in, inIns,  o_out, outOvf, dOut, insOut);
-    mw_latch mw(!clock, xm_o_out, xm_ovf_out, q_dmem, xm_ir_curr, mw_o_out, mw_ovf_out, mw_d_out, mw_ir_out);
-    assign mw_ovf_real = mw_ovf_out === 1'b1;
-    //If jal, change data to dlatch pc
-    assign is_mw_jal = (mw_ir_out == 32'b00000111110000000000000000000000) === 1'b1;
+    wire mw_ovf_out;
+    mw_latch mw(clock, xm_o_out, xm_ovf_out, q_dmem, xm_ir_out, mw_o_out, mw_ovf_out, mw_d_out, mw_ir_out);
 
+    // regfile writeback stage
     wire [4:0] mw_opcode;
-    wire is_mw_rOp, is_mw_lw, is_mw_addi;
     assign mw_opcode = mw_ir_out[31:27];
-    assign is_mw_rOp = ~mw_opcode[4] & ~mw_opcode[3] & ~mw_opcode[2] & ~mw_opcode[1] & ~mw_opcode[0];
-    assign is_mw_lw = ~mw_opcode[4] & mw_opcode[3] & ~mw_opcode[2] & ~mw_opcode[1] & ~mw_opcode[0];
-    assign is_mw_addi = ~mw_opcode[4] & ~mw_opcode[3] & mw_opcode[2] & ~mw_opcode[1] & mw_opcode[0];
-
-    //module mux_2(out, select, in0, in1);
-    //out, inp, enab
-    tri_state_buffer aluData(data_writeReg, mw_o_out, (is_mw_rOp));
-    tri_state_buffer lw(data_writeReg, mw_d_out, (is_mw_lw));
+    wire mw_rOp, mw_addi, mw_lw, mw_sw, mw_jal, mw_bex, mw_setx;
+    assign mw_rOp = (mw_opcode === 5'b00000);
+    assign mw_addi = (mw_opcode === 5'b00101);
+    assign mw_lw = (mw_opcode === 5'b01000);
+    assign mw_jal = (mw_opcode === 5'b00011);
+    assign mw_setx = (mw_opcode === 5'b10101);
 
 
+    //choose writedata
+    tri_state_buffer_5 basecase(mw_ir_out[26:22], !(mw_ovf_out || mw_setx) && !mw_jal && !(mdiv_done && !mdiv_exc), ctrl_writeReg);
+    tri_state_buffer_5 jal(5'd31, !(mw_ovf_out || mw_setx) && mw_jal && !(mdiv_done && !mdiv_exc), ctrl_writeReg);
+    tri_state_buffer_5 mdivWrite(mdiv_cIns[26:22], !(mw_ovf_out || mw_setx) && !mw_jal && (mdiv_done && !mdiv_exc), ctrl_writeReg);
+    tri_state_buffer_5 statusWrite(5'd30, (mw_ovf_out || mw_setx) && !mw_jal && !(mdiv_done && !mdiv_exc), ctrl_writeReg);
 
+    // select logic for write reg
+    assign data_writeReg = mw_lw ? mw_d_out : (!(mdiv_done && !mdiv_exc) ?  mw_o_out : mdiv_res);
+    assign ctrl_writeEnable = mw_rOp |  mw_jal | mw_addi | mw_lw | mw_setx | (mdiv_done && !mdiv_exc);
 
-    mux_2 writebackmux(data_writeReg, is_mw_lw, mw_o_out, mw_d_out);
+    //refactored control signals
+    wire [31:0] rstatWrite;
+    wire stall, bj;
+    control controll(pcAdv, dx_pc_out, imm, binp_mux_out, dx_ins_out, notEq, notEq ? ~lessthn : 1'b0, pc_next, bj);
+    stall stalll(fd_ins_curr, dx_ins_out, xm_ir_out, mdiv_runnin, mdiv_done, stall);
+    bypass bypasss(dx_ins_out, xm_ir_out, mw_ir_out, xm_ovf_out, mw_ovf_out, mux_a_select, mux_b_select, wm_sel);
+    handleRstat pickVal(rstatWrite, mdiv_done ? mdiv_cIns[31:27] : dx_opcode, mdiv_done ? mdiv_cIns[6:2] : alu_opcode);
 
-    //assign writeback reg, changes if status
-    assign ctrl_writeReg = (mw_ovf_real) && !is_mw_jal ? 5'd30 : mw_ir_out[26:22];
-    //Disable write enable with other instruction types as added
-    assign ctrl_writeEnable = is_mw_lw | is_mw_addi | is_mw_rOp | is_mw_jal;
-
-    bypass bypassUnit(dx_ir_out, xm_ir_curr, mw_ir_out, xm_ovf_out, mw_ovf_real, mux_inpa_select, mux_inpb_select, mux_wmselect);
-
-
-
-// 	/* END CODE */
 endmodule

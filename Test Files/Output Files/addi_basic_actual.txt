@@ -1,64 +1,64 @@
-Cycle  10: Wrote x into register 1
-Cycle  11: Wrote x into register 2
-Cycle  12: Wrote x into register 3
-Cycle  13: Wrote x into register 4
-Cycle  14: Wrote x into register 5
-Cycle  15: Wrote x into register 6
-Cycle  16: Wrote x into register 7
-Cycle  17: Wrote x into register 8
-Cycle  18: Wrote x into register 9
-Cycle  19: Wrote x into register 10
-Cycle  20: Wrote x into register 11
-Cycle  21: Wrote x into register 12
-Cycle  22: Wrote x into register 13
-Cycle  23: Wrote x into register 14
-Cycle  24: Wrote x into register 15
-Cycle  25: Wrote x into register 16
-Cycle  26: Wrote x into register 17
-Cycle  27: Wrote x into register 18
-Cycle  28: Wrote x into register 19
-Cycle  29: Wrote x into register 20
-Cycle  30: Wrote x into register 21
-Cycle  31: Wrote x into register 22
-Cycle  32: Wrote x into register 23
-Cycle  33: Wrote x into register 24
-Cycle  34: Wrote x into register 25
-Cycle  35: Wrote x into register 26
-Cycle  36: Wrote x into register 27
-Cycle  37: Wrote x into register 28
-Cycle  38: Wrote x into register 29
-Cycle  39: Wrote x into register 30
-Cycle  40: Wrote x into register 31
+Cycle  11: Wrote 1 into register 1
+Cycle  12: Wrote 2 into register 2
+Cycle  13: Wrote 3 into register 3
+Cycle  14: Wrote 4 into register 4
+Cycle  15: Wrote 5 into register 5
+Cycle  16: Wrote 6 into register 6
+Cycle  17: Wrote 7 into register 7
+Cycle  18: Wrote 8 into register 8
+Cycle  19: Wrote 9 into register 9
+Cycle  20: Wrote 10 into register 10
+Cycle  21: Wrote 11 into register 11
+Cycle  22: Wrote 12 into register 12
+Cycle  23: Wrote 13 into register 13
+Cycle  24: Wrote 14 into register 14
+Cycle  25: Wrote 15 into register 15
+Cycle  26: Wrote 16 into register 16
+Cycle  27: Wrote 17 into register 17
+Cycle  28: Wrote 18 into register 18
+Cycle  29: Wrote 19 into register 19
+Cycle  30: Wrote 20 into register 20
+Cycle  31: Wrote 21 into register 21
+Cycle  32: Wrote 22 into register 22
+Cycle  33: Wrote 23 into register 23
+Cycle  34: Wrote 24 into register 24
+Cycle  35: Wrote 25 into register 25
+Cycle  36: Wrote 26 into register 26
+Cycle  37: Wrote 27 into register 27
+Cycle  38: Wrote 28 into register 28
+Cycle  39: Wrote 29 into register 29
+Cycle  40: Wrote 30 into register 30
+Cycle  41: Wrote 31 into register 31
 ============== Testing Mode ==============
 Reg  0:           0
-Reg  1:           x
-Reg  2:           x
-Reg  3:           x
-Reg  4:           x
-Reg  5:           x
-Reg  6:           x
-Reg  7:           x
-Reg  8:           x
-Reg  9:           x
-Reg 10:           x
-Reg 11:           x
-Reg 12:           x
-Reg 13:           x
-Reg 14:           x
-Reg 15:           x
-Reg 16:           x
-Reg 17:           x
-Reg 18:           x
-Reg 19:           x
-Reg 20:           x
-Reg 21:           x
-Reg 22:           x
-Reg 23:           x
-Reg 24:           x
-Reg 25:           x
-Reg 26:           x
-Reg 27:           x
-Reg 28:           x
-Reg 29:           x
-Reg 30:           x
-Reg 31:           x
+Reg  1:           1
+Reg  2:           2
+Reg  3:           3
+Reg  4:           4
+Reg  5:           5
+Reg  6:           6
+Reg  7:           7
+Reg  8:           8
+Reg  9:           9
+Reg 10:          10
+Reg 11:          11
+Reg 12:          12
+Reg 13:          13
+Reg 14:          14
+Reg 15:          15
+Reg 16:          16
+Reg 17:          17
+Reg 18:          18
+Reg 19:          19
+Reg 20:          20
+Reg 21:          21
+Reg 22:          22
+Reg 23:          23
+Reg 24:          24
+Reg 25:          25
+Reg 26:          26
+Reg 27:          27
+Reg 28:          28
+Reg 29:          29
+Reg 30:          30
+Reg 31:          31

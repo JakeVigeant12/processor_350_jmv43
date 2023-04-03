@@ -1,13 +1,12 @@
 ./stall.v
-./regfile_processor/regfile_tb.v
+./multdivlatch.v
+./fdlatch.v
+./overflow.v
 ./regfile_processor/register.v
 ./regfile_processor/dffe_ref.v
 ./regfile_processor/regfile.v
 ./regfile_processor/decoder_32.v
 ./regfile_processor/tri_state_buffer.v
-./regfile_processor/mux_32.v
-./fd_latch.v
-./tri_state_buffer_5.v
 ./xm_latch.v
 ./Wrapper_tb.v
 ./alucheckk/eight_bit_left_shift.v
@@ -41,10 +40,9 @@
 ./Wrapper.v
 ./control.v
 ./RAM.v
-./dffe_neg.v
 ./processor.v
+./tri_buffer_rstat.v
 ./bypass.v
-./rstat.v
 ./mult_div_processor/mult.v
 ./mult_div_processor/aq_reg.v
 ./mult_div_processor/ctrl_reg.v
@@ -59,6 +57,6 @@
 ./mult_div_processor/counter.v
 ./mult_div_processor/eightbitlookahead.v
 ./ROM.v
-./mdiv_latch.v
-./dx_latch.v
+./negdff.v
+./dxlatxh.v
 ./mw_latch.v

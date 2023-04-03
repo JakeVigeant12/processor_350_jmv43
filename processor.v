@@ -161,7 +161,7 @@ module processor(
     wire [31:0] xm_o_in;
     wire [2:0] xm_o_in_sel;
 
-    assign xm_o_in_sel[0] = ovf;
+    assign xm_o_in_sel[0] = overflow;
     assign xm_o_in_sel[1] = dxJal;
     assign xm_o_in_sel[2] = dxSetx;
     mux_8 xmoin(alu_out, 0, dx_pc_curr, 0, rstatus, 0, 0, 0, xm_o_in, xm_o_in_sel);
